@@ -1,0 +1,43 @@
+
+# if % is in the first column, then it's a directive
+%psource {
+    // parser source code
+}
+
+%asource # another comment
+{
+    // ast source code
+    asd {
+            int flarp;
+        };
+}
+
+%pheader {
+    // parser header code
+}
+
+%aheader {
+    // ast header code
+}
+
+%pname "parser"
+%aname "ast"
+
+module:module_item_list
+
+module_item_list
+    : module_item module_item_list
+    : module_item
+
+# comment of space required between rules
+module_item
+    : STRING
+    : NUMBER
+    : QWERTS
+
+%aheader
+{
+    #include <something.h>
+    pooker = 123;
+    printf("bacon and eggs");
+}

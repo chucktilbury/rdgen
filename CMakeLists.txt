@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(rdgen_exe)
+project(rdpgen_exe)
 
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 #set(CMAKE_BUILD_TYPE release)

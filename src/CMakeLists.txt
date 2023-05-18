@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(rdgen)
+project(rdpgen)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ./)
 
@@ -9,7 +9,7 @@ add_executable(${PROJECT_NAME}
     ast.c
     parser.c
     strs.c
-    rdgen.c
+    rdpgen.c
     dump.c
 )
 

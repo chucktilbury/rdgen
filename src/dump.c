@@ -15,8 +15,8 @@ static void dump_rules(Pstate* state) {
 
     if(state->verbo > 3) {
         printf("----- rules -----\n\n");
-        rule_lst_reset(state->rules);
-        for(Rule* r = rule_lst_iterate(state->rules); r != NULL; r = rule_lst_iterate(state->rules)) {
+        prim_rule_lst_reset(state->rules);
+        for(PrimaryRule* r = prim_rule_lst_iterate(state->rules); r != NULL; r = prim_rule_lst_iterate(state->rules)) {
             printf("%s\n", r->name->buffer);
             pattern_lst_reset(r->patterns);
             for(Pattern* p = pattern_lst_iterate(r->patterns); p != NULL; p = pattern_lst_iterate(r->patterns)) {

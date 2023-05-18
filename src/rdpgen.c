@@ -30,7 +30,7 @@
 #define END_LINE '\n'
 
 PTRLST_IMPL(str_lst, Str*)
-PTRLST_IMPL(rule_lst, Rule*)
+PTRLST_IMPL(prim_rule_lst, PrimaryRule*)
 PTRLST_IMPL(pattern_lst, Pattern*)
 
 static inline int consume_comment(Pstate* state) {
@@ -285,9 +285,9 @@ void get_directive(Pstate* state) {
 /*
  * Allocate memory for a new rule.
  */
-Rule* create_rule() {
+PrimaryRule* create_rule() {
 
-    Rule* rule     = _alloc_obj(Rule);
+    PrimaryRule* rule     = _alloc_obj(PrimaryRule);
     rule->name     = NULL;
     rule->patterns = pattern_lst_create();
 
@@ -315,7 +315,7 @@ Pattern* get_pattern(Pstate* state) {
  * When this is entered, a rule name has been read. The next thing is a list
  * of lines where each one starts with a ':'.
  */
-void get_pattern_lst(Pstate* state, Rule* rule) {
+void get_pattern_lst(Pstate* state, PrimaryRule* rule) {
 
     SPACE;
     while(true) {
@@ -336,14 +336,14 @@ void get_pattern_lst(Pstate* state, Rule* rule) {
  */
 void get_rule(Pstate* state) {
 
-    Rule* rule = create_rule();
+    PrimaryRule* rule = create_rule();
 
     rule->name = get_name(state);
     if(rule->name == NULL)
         SYNTAX("cannot read a rule name");
     else {
         get_pattern_lst(state, rule);
-        rule_lst_add(state->rules, rule);
+        prim_rule_lst_add(state->rules, rule);
     }
 }
 
@@ -367,7 +367,7 @@ Pstate* create_parser(const char* fname) {
     state->ast_header    = str_lst_create();
     state->parser_source = str_lst_create();
     state->parser_header = str_lst_create();
-    state->rules         = rule_lst_create();
+    state->rules = prim_rule_lst_create();
     state->finished      = false;
 
     state->ast_name    = create_str(NULL);

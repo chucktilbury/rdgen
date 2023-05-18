@@ -11,6 +11,7 @@ add_executable(${PROJECT_NAME}
     strs.c
     rdpgen.c
     dump.c
+    process.c
 )
 
 target_include_directories(${PROJECT_NAME}

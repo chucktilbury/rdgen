@@ -4,6 +4,9 @@ TARGET	=	rdgen
 OBJS	=	memory.o \
 			strs.o \
 			rdgen.o \
+			ast.o \
+			parser.o \
+			emit.o \
 			dump.o
 
 DEFS	=	-DUSE_GC

@@ -29,6 +29,7 @@ typedef struct {
     int ch;
     int line_no;
     int col_no;
+    int verbo;
     bool finished;
     int errors;
     Str* ast_name;

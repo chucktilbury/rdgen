@@ -26,7 +26,7 @@
 module:module_item_list
 
 module_item_list
-    : module_item module_item_list
+    : module_item COMMA module_item_list
     : module_item
 
 # comment of space required between rules

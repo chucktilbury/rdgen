@@ -133,36 +133,6 @@ void syntax(Pstate* state, const char* fmt, ...) {
 
 #define SYNTAX(fmt, ...)  syntax(state, fmt, ## __VA_ARGS__)
 
-Pstate* create_parser(const char* fname) {
-
-    Pstate* ptr = _alloc_obj(Pstate);
-
-    ptr->fh = fopen(fname, "r");
-
-    if(ptr->fh == NULL) {
-        fprintf(stderr, "Cannot open input file: %s: %s\n", fname, strerror(errno));
-        exit(1);
-    }
-
-    ptr->ch = 0;
-    ptr->line_no = 1;
-    ptr->col_no = 1;
-    ptr->errors = 0;
-    ptr->ast_source = str_lst_create();
-    ptr->ast_header = str_lst_create();
-    ptr->parser_source = str_lst_create();
-    ptr->parser_header = str_lst_create();
-    ptr->rules = rule_lst_create();
-    ptr->finished = false;
-
-    ptr->ast_name = create_str(NULL);
-    ptr->parser_name = create_str(NULL);
-
-    // prime the stream of characters.
-    ptr->ch = consume_char(ptr);
-
-    return ptr;
-}
 
 /*
  * Get a quoted string from the input stream. No checking is done
@@ -378,7 +348,52 @@ void get_rule(Pstate* state) {
     }
 }
 
+Pstate* create_parser(const char* fname) {
+
+    Pstate* state = _alloc_obj(Pstate);
+
+    state->fh = fopen(fname, "r");
+
+    if(state->fh == NULL) {
+        fprintf(stderr, "Cannot open input file: %s: %s\n", fname, strerror(errno));
+        exit(1);
+    }
+
+    state->ch = 0;
+    state->line_no = 1;
+    state->col_no = 1;
+    state->errors = 0;
+    state->verbo = 5;
+    state->ast_source = str_lst_create();
+    state->ast_header = str_lst_create();
+    state->parser_source = str_lst_create();
+    state->parser_header = str_lst_create();
+    state->rules = rule_lst_create();
+    state->finished = false;
+
+    state->ast_name = create_str(NULL);
+    state->parser_name = create_str(NULL);
+
+    // prime the stream of characters.
+    state->ch = consume_char(state);
+
+    while(!FINISHED) {
+        SPACE;
+        int ch = CHAR;
+        if(ch != EOF) {
+            if(ch == '%')
+                get_directive(state);
+            else
+                get_rule(state);
+        }
+    }
+
+    return state;
+}
+
 #include "dump.h"
+#include "ast.h"
+#include "parser.h"
 
 /*
  * Main entry point.
@@ -392,17 +407,13 @@ int main(int argc, char** argv) {
 
     Pstate* state = create_parser(argv[1]);
 
-    while(!FINISHED) {
-        SPACE;
-        int ch = CHAR;
-        if(ch != EOF) {
-            if(ch == '%')
-                get_directive(state);
-            else
-                get_rule(state);
-        }
+    if(state->errors == 0) {
+        emit_ast(state);
+        emit_parser(state);
     }
 
     dump_state(state);
+    printf("errors: %d\n", state->errors);
+
     return 0;
 }

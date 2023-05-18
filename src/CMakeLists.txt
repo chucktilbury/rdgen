@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME}
     parser.c
     strs.c
     rdgen.c
+    dump.c
 )
 
 target_include_directories(${PROJECT_NAME}

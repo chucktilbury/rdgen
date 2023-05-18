@@ -1,17 +1,17 @@
 /*
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "ptrlst.h"
-#include "strlst.h"
 #include "rulelst.h"
+#include "strlst.h"
 #include "strs.h"
 */
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <errno.h>
 #include <ctype.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "memory.h"
 
@@ -27,7 +27,7 @@
  * There will be a name and 2 predicates and each one will have 3 strings
  * in it.
  */
-#define END_LINE    '\n'
+#define END_LINE '\n'
 
 PTRLST_IMPL(str_lst, Str*)
 PTRLST_IMPL(rule_lst, Rule*)
@@ -111,11 +111,10 @@ static inline bool is_finished(Pstate* state) {
     return state->finished;
 }
 
-#define CHAR        get_char(state)
-#define CONSUME     consume_char(state)
-#define SPACE       consume_space(state)
-#define FINISHED    is_finished(state)
-
+#define CHAR get_char(state)
+#define CONSUME consume_char(state)
+#define SPACE consume_space(state)
+#define FINISHED is_finished(state)
 
 
 void syntax(Pstate* state, const char* fmt, ...) {
@@ -131,7 +130,7 @@ void syntax(Pstate* state, const char* fmt, ...) {
     state->errors++;
 }
 
-#define SYNTAX(fmt, ...)  syntax(state, fmt, ## __VA_ARGS__)
+#define SYNTAX(fmt, ...) syntax(state, fmt, ##__VA_ARGS__)
 
 
 /*
@@ -150,7 +149,7 @@ Str* get_qstr(Pstate* state) {
     }
     else {
         str = create_str(NULL);
-        CONSUME;    // consume the '\"'
+        CONSUME; // consume the '\"'
         for(ch = CHAR; ch != '\"'; ch = CONSUME) {
             if(ch == EOF) {
                 SYNTAX("unexpected end of file");
@@ -169,7 +168,7 @@ Str* get_qstr(Pstate* state) {
 
 /*
  * Retrieve a string that does not have spaces, begins with isalpha() and
- * has only isalnum() in it. Also a underline is acceptible.
+ * has only isalnum() in it. Also a underline is acceptable.
  */
 Str* get_name(Pstate* state) {
 
@@ -391,8 +390,8 @@ Pstate* create_parser(const char* fname) {
     return state;
 }
 
-#include "dump.h"
 #include "ast.h"
+#include "dump.h"
 #include "parser.h"
 
 /*

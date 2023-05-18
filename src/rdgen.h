@@ -1,9 +1,9 @@
 #ifndef _RDGEN_H
 #define _RDGEN_H
 
-#include <stdio.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
 
 #include "ptrlst.h"
 #include "strs.h"

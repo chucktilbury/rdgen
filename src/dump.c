@@ -6,8 +6,7 @@ static void dump_str_lst(str_lst_t* lst, const char* label, int verbo) {
     if(verbo > 5) {
         printf("\n----- %s -----\n", label);
         str_lst_reset(lst);
-        for(Str* item = str_lst_iterate(lst);
-                    item != NULL; item = str_lst_iterate(lst))
+        for(Str* item = str_lst_iterate(lst); item != NULL; item = str_lst_iterate(lst))
             printf("%s\n", item->buffer);
     }
 }
@@ -17,16 +16,16 @@ static void dump_rules(Pstate* state) {
     if(state->verbo > 3) {
         printf("----- rules -----\n\n");
         rule_lst_reset(state->rules);
-        for(Rule* r = rule_lst_iterate(state->rules);
-                        r != NULL; r = rule_lst_iterate(state->rules)) {
+        for(Rule* r = rule_lst_iterate(state->rules); r != NULL;
+            r = rule_lst_iterate(state->rules)) {
             printf("%s\n", r->name->buffer);
             pattern_lst_reset(r->patterns);
-            for(Pattern* p = pattern_lst_iterate(r->patterns);
-                            p != NULL; p = pattern_lst_iterate(r->patterns)) {
+            for(Pattern* p = pattern_lst_iterate(r->patterns); p != NULL;
+                p = pattern_lst_iterate(r->patterns)) {
                 printf("\t: ");
                 str_lst_reset(p->lst);
-                for(Str* s = str_lst_iterate(p->lst);
-                                s != NULL; s = str_lst_iterate(p->lst)) {
+                for(Str* s = str_lst_iterate(p->lst); s != NULL;
+                    s = str_lst_iterate(p->lst)) {
                     printf("%s ", s->buffer);
                 }
                 printf("\n");

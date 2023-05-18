@@ -1,5 +1,7 @@
 build/
 .vscode/
+bin/
+docs/out/
 
 # Prerequisites
 *.d

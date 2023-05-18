@@ -13,7 +13,7 @@ void* mem_alloc(size_t size) {
 #ifndef USE_GC
     void* ptr = malloc(size);
 #else
-    void* ptr = GC_MALLOC(size);
+    void* ptr  = GC_MALLOC(size);
 #endif
 
     if(ptr == NULL) {

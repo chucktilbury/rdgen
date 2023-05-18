@@ -40,7 +40,7 @@ static inline int consume_comment(Pstate* state) {
         if(state->ch == END_LINE || state->ch == EOF) {
             state->line_no++;
             state->col_no = 1;
-            state->ch = fgetc(state->fh);
+            state->ch     = fgetc(state->fh);
             break;
         }
     }
@@ -140,7 +140,7 @@ void syntax(Pstate* state, const char* fmt, ...) {
 Str* get_qstr(Pstate* state) {
 
     SPACE;
-    int ch = CHAR;
+    int ch   = CHAR;
     Str* str = NULL;
 
     if(ch != '\"') {
@@ -173,7 +173,7 @@ Str* get_qstr(Pstate* state) {
 Str* get_name(Pstate* state) {
 
     SPACE;
-    int ch = CHAR;
+    int ch   = CHAR;
     Str* str = NULL;
 
     if(!(isalpha(ch) || ch == '_')) {
@@ -205,8 +205,8 @@ Str* get_name(Pstate* state) {
 Str* get_block(Pstate* state) {
 
     SPACE;
-    int ch = CHAR;
-    Str* str = NULL;
+    int ch    = CHAR;
+    Str* str  = NULL;
     int count = 0;
 
     if(ch != '{') {
@@ -244,9 +244,9 @@ Str* get_block(Pstate* state) {
  * directives accept a quoted string and the block directives accept an
  * arbitrary block of C code that will be run inside a function.
  *
- * When this is entered a '%' has been read and it the current character in the
- * character stream. The next character after the '%' must be the directive
- * that is to be parsed.
+ * When this is entered a '%' has been read and it the current character in
+ * the character stream. The next character after the '%' must be the
+ * directive that is to be parsed.
  */
 void get_directive(Pstate* state) {
 
@@ -287,8 +287,8 @@ void get_directive(Pstate* state) {
  */
 Rule* create_rule() {
 
-    Rule* rule = _alloc_obj(Rule);
-    rule->name = NULL;
+    Rule* rule     = _alloc_obj(Rule);
+    rule->name     = NULL;
     rule->patterns = pattern_lst_create();
 
     return rule;
@@ -302,7 +302,7 @@ Rule* create_rule() {
 Pattern* get_pattern(Pstate* state) {
 
     Pattern* pat = _alloc_obj(Pattern);
-    pat->lst = str_lst_create();
+    pat->lst     = str_lst_create();
 
     while(SPACE == 0) {
         str_lst_add(pat->lst, get_name(state));
@@ -358,19 +358,19 @@ Pstate* create_parser(const char* fname) {
         exit(1);
     }
 
-    state->ch = 0;
-    state->line_no = 1;
-    state->col_no = 1;
-    state->errors = 0;
-    state->verbo = 5;
-    state->ast_source = str_lst_create();
-    state->ast_header = str_lst_create();
+    state->ch            = 0;
+    state->line_no       = 1;
+    state->col_no        = 1;
+    state->errors        = 0;
+    state->verbo         = 5;
+    state->ast_source    = str_lst_create();
+    state->ast_header    = str_lst_create();
     state->parser_source = str_lst_create();
     state->parser_header = str_lst_create();
-    state->rules = rule_lst_create();
-    state->finished = false;
+    state->rules         = rule_lst_create();
+    state->finished      = false;
 
-    state->ast_name = create_str(NULL);
+    state->ast_name    = create_str(NULL);
     state->parser_name = create_str(NULL);
 
     // prime the stream of characters.

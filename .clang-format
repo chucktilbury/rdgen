@@ -83,7 +83,7 @@ AlignAfterOpenBracket: true
 # int aaaa = 12;
 # int b    = 23;
 # int ccc  = 23;
-AlignConsecutiveAssignments: false
+AlignConsecutiveAssignments: true
 
 # AlignEscapedNewlinesLeft (bool)
 # If true, aligns escaped newlines as far left as possible. Otherwise puts them
@@ -111,7 +111,7 @@ AllowShortBlocksOnASingleLine: false
 
 # AllowShortCaseLabelsOnASingleLine (bool)
 # If true, short case labels will be contracted to a single line.
-AllowShortCaseLabelsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: false
 
 # AllowShortFunctionsOnASingleLine (ShortFunctionStyle)
 # Dependent on the value, int f() { return 0; } can be put on a single line.
@@ -212,7 +212,7 @@ BreakConstructorInitializersBeforeComma: false
 # ColumnLimit (unsigned)
 # The column limit.
 # A column limit of 0 means that there is no column limit. In this case, clang-format will respect the input’s line breaking decisions within statements unless they contradict other rules.
-ColumnLimit: 80
+ColumnLimit: 132
 
 # CommentPragmas (std::string)
 # A regular expression that describes comments with special meaning, which should not be split into lines or otherwise changed.
@@ -309,7 +309,7 @@ MaxEmptyLinesToKeep: 2
 #   NI_None (in configuration: None) Don’t indent in namespaces.
 #   NI_Inner (in configuration: Inner) Indent only in inner namespaces (nested in other namespaces).
 #   NI_All (in configuration: All) Indent in all namespaces.
-NamespaceIndentation: None
+NamespaceIndentation: All
 
 # ObjCBlockIndentWidth (unsigned)
 # The number of characters to use for indentation of ObjC blocks.
@@ -358,6 +358,7 @@ PenaltyReturnTypeOnItsOwnLine: 20
 # ReflowComments (bool)
 # If true, clang-format will attempt to re-flow comments.
 #ReflowComments: true (from v3.9)
+ReflowComments: true
 
 # SortIncludes (bool)
 # If true, clang-format will sort #includes.

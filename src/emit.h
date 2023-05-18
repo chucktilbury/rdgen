@@ -2,6 +2,7 @@
 #define _EMIT_H
 
 #include "ptrlst.h"
+#include "strs.h"
 
 PTRLST_HEADER(estr_lst, Str*)
 

@@ -35,8 +35,8 @@ void* iterate_lst(PtrLst* lst);
     N##_t* N##_create() {                                       \
                                                                 \
         N##_t* lst = _alloc_obj(N##_t);                         \
-        lst->cap = 0x01 << 3;                                   \
-        lst->list = _alloc_array(T, lst->cap);                  \
+        lst->cap   = 0x01 << 3;                                 \
+        lst->list  = _alloc_array(T, lst->cap);                 \
                                                                 \
         return lst;                                             \
     }                                                           \

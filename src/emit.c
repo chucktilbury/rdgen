@@ -16,7 +16,7 @@ Emit* create_emit(Str* name) {
 
     Emit* ptr = _alloc_obj(Emit);
     ptr->name = name;
-    ptr->lst = estr_lst_create();
+    ptr->lst  = estr_lst_create();
 
     return ptr;
 }
@@ -45,8 +45,7 @@ void commit(Emit* ptr) {
     FILE* fp = fopen(ptr->name->buffer, "w");
 
     if(fp == NULL) {
-        fprintf(stderr, "fatal error: Cannot open output file: %s: %s\n",
-                ptr->name->buffer, strerror(errno));
+        fprintf(stderr, "fatal error: Cannot open output file: %s: %s\n", ptr->name->buffer, strerror(errno));
         exit(1);
     }
 

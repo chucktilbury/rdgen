@@ -8,9 +8,9 @@
 
 Str* create_str(const char* str) {
 
-    Str* ptr = _alloc_obj(Str);
-    ptr->cap = 0x01 << 3;
-    ptr->len = 0;
+    Str* ptr    = _alloc_obj(Str);
+    ptr->cap    = 0x01 << 3;
+    ptr->len    = 0;
     ptr->buffer = _alloc_array(char, ptr->cap);
 
     if(str != NULL && strlen(str) > 0)
@@ -52,7 +52,7 @@ int cat_str_str(Str* ptr, const char* str) {
 
 Str* dup_str(Str* ptr) {
 
-    Str* str = _dup_obj(ptr, Str);
+    Str* str    = _dup_obj(ptr, Str);
     str->buffer = _alloc_array(char, str->cap);
     memcpy(str->buffer, ptr->buffer, ptr->len + 1);
 
@@ -86,7 +86,7 @@ int truncate_str(Str* str, int idx) {
 
     if((size_t)idx < str->len) {
         str->buffer[idx] = 0;
-        str->len = idx;
+        str->len         = idx;
     }
 
     return str->len;
@@ -104,7 +104,7 @@ int find_str(Str* str, const char* s) {
 
 void clear_str(Str* str) {
 
-    str->len = 0;
+    str->len       = 0;
     str->buffer[0] = 0;
 }
 

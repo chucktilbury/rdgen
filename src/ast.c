@@ -1,5 +1,6 @@
 
 #include "ast.h"
+#include "emit.h"
 
 void emit_ast(Pstate* state) {
 

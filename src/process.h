@@ -1,9 +1,9 @@
 #ifndef _PROCESS_H
 #define _PROCESS_H
 
-#include <stdbool.h>
-#include "strs.h"
 #include "ptrlst.h"
+#include "strs.h"
+#include <stdbool.h>
 
 PTRLST_HEADER(term_lst, Str*)
 PTRLST_HEADER(nterm_lst, Str*)

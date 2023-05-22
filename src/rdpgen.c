@@ -287,9 +287,9 @@ void get_directive(Pstate* state) {
  */
 PrimaryRule* create_rule() {
 
-    PrimaryRule* rule     = _alloc_obj(PrimaryRule);
-    rule->name     = NULL;
-    rule->patterns = pattern_lst_create();
+    PrimaryRule* rule = _alloc_obj(PrimaryRule);
+    rule->name        = NULL;
+    rule->patterns    = pattern_lst_create();
 
     return rule;
 }
@@ -367,7 +367,7 @@ Pstate* create_parser(const char* fname) {
     state->ast_header    = str_lst_create();
     state->parser_source = str_lst_create();
     state->parser_header = str_lst_create();
-    state->rules = prim_rule_lst_create();
+    state->rules         = prim_rule_lst_create();
     state->finished      = false;
 
     state->ast_name    = create_str(NULL);

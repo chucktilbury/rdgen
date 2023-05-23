@@ -69,7 +69,7 @@ void* mem_dup(void* ptr, size_t size) {
 #endif
 
     if(nptr == NULL) {
-        fprintf(stderr, "Cannot allocate memory: %lu\n", size);
+        fprintf(stderr, "Cannot duplicate memory: %lu\n", size);
         exit(1);
     }
 

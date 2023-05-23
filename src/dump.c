@@ -1,10 +1,11 @@
 
-#include "rdpgen.h"
+#include <stdio.h>
+#include "dump.h"
 
 static void dump_str_lst(str_lst_t* lst, const char* label, int verbo) {
 
     if(verbo > 5) {
-        printf("\n----- %s -----\n", label);
+        printf("\n----- %s (%lu) -----\n", label, lst->len);
         str_lst_reset(lst);
         for(Str* item = str_lst_iterate(lst); item != NULL; item = str_lst_iterate(lst))
             printf("%s\n", item->buffer);
@@ -14,10 +15,10 @@ static void dump_str_lst(str_lst_t* lst, const char* label, int verbo) {
 static void dump_rules(Pstate* state) {
 
     if(state->verbo > 3) {
-        printf("----- rules -----\n\n");
-        prim_rule_lst_reset(state->rules);
-        for(PrimaryRule* r = prim_rule_lst_iterate(state->rules); r != NULL; r = prim_rule_lst_iterate(state->rules)) {
-            printf("%s\n", r->name->buffer);
+        printf("----- rules (%lu) -----\n\n", state->rules->len);
+        rule_lst_reset(state->rules);
+        for(Rule* r = rule_lst_iterate(state->rules); r != NULL; r = rule_lst_iterate(state->rules)) {
+            printf("%s - recursive:%s\n", r->name->buffer, r->is_recursive ? "true" : "false");
             pattern_lst_reset(r->patterns);
             for(Pattern* p = pattern_lst_iterate(r->patterns); p != NULL; p = pattern_lst_iterate(r->patterns)) {
                 printf("\t: ");
@@ -46,10 +47,15 @@ void dump_state(Pstate* state) {
 
         printf("\n");
         dump_rules(state);
+        dump_str_lst(state->terminals, "terminals", 6);
+        dump_str_lst(state->non_terminals, "non terminals", 6);
 
         dump_str_lst(state->parser_source, "psource", state->verbo);
         dump_str_lst(state->ast_source, "asource", state->verbo);
         dump_str_lst(state->parser_header, "pheader", state->verbo);
         dump_str_lst(state->ast_header, "aheader", state->verbo);
+
+        printf("\n");
+        printf("\n");
     }
 }

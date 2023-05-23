@@ -1,21 +1,35 @@
-/*
-#include <stdbool.h>
 #include <stdio.h>
 
-#include "ptrlst.h"
-#include "rulelst.h"
-#include "strlst.h"
-#include "strs.h"
-*/
-#include <ctype.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include "errors.h"
 #include "memory.h"
-
 #include "rdpgen.h"
+#include "dump.h"
+#include "parser.h"
+#include "preproc.h"
+
+/*
+ * Main entry point.
+ */
+int main(int argc, char** argv) {
+
+    if(argc < 2)
+        fatal("file name is required");
+
+    Pstate* state = parse_input(argv[1]);
+
+    pre_process(state);
+    if(get_errors() == 0) {
+        //emit_ast(state);
+        //emit_parser(state);
+        dump_state(state);
+    }
+
+    printf("errors: %d\n", get_errors());
+
+    return 0;
+}
+
+#if 0
 /*
  * A rule has a name. The pattern is a list of pointers to a list of strings.
  * Each string in the list is a predicate of the rule. For example-
@@ -30,7 +44,7 @@
 #define END_LINE '\n'
 
 PTRLST_IMPL(str_lst, Str*)
-PTRLST_IMPL(prim_rule_lst, PrimaryRule*)
+PTRLST_IMPL(rule_lst, Rule*)
 PTRLST_IMPL(pattern_lst, Pattern*)
 
 static inline int consume_comment(Pstate* state) {
@@ -77,18 +91,20 @@ static inline int consume_char(Pstate* state) {
     state->ch = fgetc(state->fh);
 
     if(state->ch != EOF) {
-        if(state->ch == END_LINE) {
+        /*if(state->ch == '#') {
+            consume_comment(state);
+        }
+        else */ if(state->ch == END_LINE) {
             state->line_no++;
             state->col_no = 1;
         }
-        else if(state->ch == '#') {
-            consume_comment(state);
-        }
-        else
+        else {
             state->col_no++;
+        }
     }
-    else
+    else {
         state->finished = true;
+    }
 
     return state->ch;
 }
@@ -97,9 +113,12 @@ static inline int consume_space(Pstate* state) {
 
     int retv = 0;
 
-    while(isspace(state->ch) && state->ch != EOF) {
+    while((isspace(state->ch) && state->ch != EOF) || state->ch == '#') {
         if(state->ch == END_LINE)
             retv++;
+        else if(state->ch == '#')
+            consume_comment(state);
+
         consume_char(state);
     }
 
@@ -115,23 +134,6 @@ static inline bool is_finished(Pstate* state) {
 #define CONSUME consume_char(state)
 #define SPACE consume_space(state)
 #define FINISHED is_finished(state)
-
-
-void syntax(Pstate* state, const char* fmt, ...) {
-
-    va_list args;
-
-    fprintf(stderr, "syntax error: %d: %d: ", state->line_no, state->col_no);
-
-    va_start(args, fmt);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-    fputc(END_LINE, stderr);
-    state->errors++;
-}
-
-#define SYNTAX(fmt, ...) syntax(state, fmt, ##__VA_ARGS__)
-
 
 /*
  * Get a quoted string from the input stream. No checking is done
@@ -285,11 +287,11 @@ void get_directive(Pstate* state) {
 /*
  * Allocate memory for a new rule.
  */
-PrimaryRule* create_rule() {
+Rule* create_rule() {
 
-    PrimaryRule* rule = _alloc_obj(PrimaryRule);
-    rule->name        = NULL;
-    rule->patterns    = pattern_lst_create();
+    Rule* rule     = _alloc_obj(Rule);
+    rule->name     = NULL;
+    rule->patterns = pattern_lst_create();
 
     return rule;
 }
@@ -315,7 +317,7 @@ Pattern* get_pattern(Pstate* state) {
  * When this is entered, a rule name has been read. The next thing is a list
  * of lines where each one starts with a ':'.
  */
-void get_pattern_lst(Pstate* state, PrimaryRule* rule) {
+void get_pattern_lst(Pstate* state, Rule* rule) {
 
     SPACE;
     while(true) {
@@ -336,14 +338,15 @@ void get_pattern_lst(Pstate* state, PrimaryRule* rule) {
  */
 void get_rule(Pstate* state) {
 
-    PrimaryRule* rule = create_rule();
+    Rule* rule = create_rule();
 
+    SPACE;
     rule->name = get_name(state);
     if(rule->name == NULL)
         SYNTAX("cannot read a rule name");
     else {
         get_pattern_lst(state, rule);
-        prim_rule_lst_add(state->rules, rule);
+        rule_lst_add(state->rules, rule);
     }
 }
 
@@ -358,20 +361,20 @@ Pstate* create_parser(const char* fname) {
         exit(1);
     }
 
+    state->finished      = false;
     state->ch            = 0;
     state->line_no       = 1;
     state->col_no        = 1;
-    state->errors        = 0;
     state->verbo         = 5;
     state->ast_source    = str_lst_create();
     state->ast_header    = str_lst_create();
     state->parser_source = str_lst_create();
     state->parser_header = str_lst_create();
-    state->rules         = prim_rule_lst_create();
-    state->finished      = false;
-
-    state->ast_name    = create_str(NULL);
-    state->parser_name = create_str(NULL);
+    state->terminals     = str_lst_create();
+    state->non_terminals = str_lst_create();
+    state->rules         = rule_lst_create();
+    state->ast_name      = create_str(NULL);
+    state->parser_name   = create_str(NULL);
 
     // prime the stream of characters.
     state->ch = consume_char(state);
@@ -389,30 +392,4 @@ Pstate* create_parser(const char* fname) {
 
     return state;
 }
-
-#include "ast.h"
-#include "dump.h"
-#include "parser.h"
-
-/*
- * Main entry point.
- */
-int main(int argc, char** argv) {
-
-    if(argc < 2) {
-        fprintf(stderr, "ERROR: file name is required.\n");
-        return 1;
-    }
-
-    Pstate* state = create_parser(argv[1]);
-
-    if(state->errors == 0) {
-        emit_ast(state);
-        emit_parser(state);
-    }
-
-    dump_state(state);
-    printf("errors: %d\n", state->errors);
-
-    return 0;
-}
+#endif

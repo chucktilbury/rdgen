@@ -4,14 +4,18 @@ project(rdpgen)
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ./)
 
 add_executable(${PROJECT_NAME}
-    ast.c
     memory.c
-    ast.c
+    #ast.c
     parser.c
     strs.c
     rdpgen.c
     dump.c
-    process.c
+    preproc.c
+#    hash.c
+    fileio.c
+    scanner.c
+    parser.c
+    errors.c
 )
 
 target_include_directories(${PROJECT_NAME}

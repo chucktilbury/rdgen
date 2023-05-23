@@ -1,10 +1,13 @@
+# asd
+# asas.
+#
 
 # if % is in the first column, then it's a directive
-%psource {
+%parser_code {
     // parser source code
 }
 
-%asource # another comment
+%ast_code # another comment
 {
     // ast source code
     asd {
@@ -12,30 +15,30 @@
         };
 }
 
-%pheader {
+%parser_header {
     // parser header code
 }
 
-%aheader {
+%ast_header {
     // ast header code
 }
 
-%pname "parser"
-%aname "ast"
+%parser_name "parser"
+%ast_name "ast"
 
-module:module_item_list
+module: module_item_list {}
 
 module_item_list
-    : module_item COMMA module_item_list
-    : module_item
+    : module_item COMMA module_item_list {}
+    : module_item {}
 
 # comment of space required between rules
 module_item
-    : STRING
-    : NUMBER
-    : QWERTS
+    : STRING {}
+    : NUMBER {}
+    : QWERTS {}
 
-%aheader
+%ast_header
 {
     #include <something.h>
     pooker = 123;

@@ -9,7 +9,7 @@ void* mem_dup_str(const char* str);
 void* mem_dup(void* ptr, size_t size);
 void mem_free(void* ptr);
 
-#define _alloc_mem(s) mem_alloc(s)
+#define _alloc(s) mem_alloc(s)
 #define _alloc_obj(t) (t*)mem_alloc(sizeof(t))
 #define _alloc_array(t, n) (t*)mem_alloc(sizeof(t) * (n))
 #define _realloc_mem(p, s) mem_realloc((void*)(p), (s))

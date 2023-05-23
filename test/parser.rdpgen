@@ -1,0 +1,345 @@
+
+%parser_code {
+
+#include <stdio.h>
+#include <stdint.h>
+
+#include "scanner.h"
+
+#define TRACE(fmt, ...) do { \
+            printf((fmt), ## __VA_ARGS__); \
+            fputc('\n', stdout); \
+        } while(0)
+
+    %union {
+        char* str;
+        char* symbol;
+        double fnum;
+        unsigned unum;
+        int inum;
+        int type;
+
+    };
+
+}
+
+#
+# Module definition
+#
+module
+    : module_item {}
+    : module module_item {}
+
+module_item
+    : namespace_definition {}
+    : import_definition {}
+    : class_definition {}
+    : scope_operator {}
+
+#
+# Namespace definition
+#
+namespace_definition
+    : NAMESPACE SYMBOL OCURLY module CCURLY {}
+
+import_definition
+    : IMPORT compound_name {}
+    : IMPORT compound_name AS SYMBOL {}
+
+#
+# Variable declaration is used to define a var name in a class and
+# also in a function. Variables that are defined in a function can
+# have an assignment as well.
+#
+name_declaration
+    : type_name SYMBOL {}
+
+variable_declaration
+    : name_declaration {}
+    : CONST name_declaration {}
+
+variable_declaration_list
+    : variable_declaration {}
+    : variable_declaration_list COMA variable_declaration {}
+
+#
+# Misc definitions
+#
+type_name
+    : UNSIGNED {}
+    : INTEGER {}
+    : FLOAT {}
+    : STRING {}
+    : BOOLEAN {}
+    : DICT {}
+    : LIST {}
+    : compound_name {}
+
+scope_operator
+    : PUBLIC {}
+    : PRIVATE {}
+    : PROTECTED {}
+
+literal_value
+    : STRG {}
+    : INUM {}
+    : UNUM {}
+    : FNUM {}
+
+bool_value
+    : TRUE {}
+    : FALSE {}
+
+#
+# Name types
+#
+array_reference
+    : SYMBOL OSQUARE expression_element CSQUARE {}
+
+function_reference
+    : SYMBOL OPAREN CPAREN {}
+    : SYMBOL OPAREN expression_list CPAREN {}
+
+#
+# Compound name names a class or a variable without an array
+# reference or a function reference.
+#
+compound_reference_element
+    : SYMBOL {}
+    : array_reference {}
+    : function_reference {}
+
+compound_reference
+    : compound_reference_element {}
+    : compound_reference DOT compound_reference_element {}
+
+compound_name
+    : SYMBOL {}
+    : compound_name DOT SYMBOL {}
+
+#
+# Expressions
+#
+expression_element
+    : compound_reference {}
+    : literal_value {}
+    : OPAREN expression CPAREN {}
+
+#
+#    /*expression
+#    : expression_element
+#    | expression OR expression
+#    | expression AND expression
+#    | expression EQU expression
+#    | expression NEQU expression
+#    | expression LORE expression
+#    | expression GORE expression
+#    | expression LESS expression
+#    | expression GREATER expression
+#    | expression PLUS expression
+#    | expression MINUS expression
+#    | expression STAR expression
+#    | expression SLASH expression
+#    | expression PERCENT expression
+#    | expression CARAT expression
+#    | MINUS expression %prec NEGATE
+#    | PLUS expression %prec NEGATE
+#    | NOT expression %prec NEGATE
+#    | OPAREN expression CPAREN
+#    ;*/
+#
+expression
+    : expr_or {}
+
+expr_or
+    : expr_and {}
+    : expr_or OR expr_and {}
+
+expr_and
+    : expr_equality {}
+    : expr_and AND expr_equality {}
+
+expr_equality
+    : expr_compare {}
+    : expr_equality EQU expr_compare {}
+    : expr_equality NEQU expr_compare {}
+
+expr_compare
+    : expr_term {}
+    : expr_compare LORE expr_term {}
+    : expr_compare GORE expr_term {}
+    : expr_compare LESS expr_term {}
+    : expr_compare GREATER expr_term {}
+
+expr_term
+    : expr_factor {}
+    : expr_term PLUS expr_factor {}
+    : expr_term MINUS expr_factor {}
+
+expr_factor
+    : expr_unary {}
+    : expr_factor STAR expr_unary {}
+    : expr_factor SLASH expr_unary {}
+    : expr_factor PERCENT expr_unary {}
+
+expr_unary
+    : expression_element {}
+    : MINUS expr_unary {}
+    : PLUS expr_unary {}
+    : NOT expr_unary {}
+
+expression_list
+    : expression {}
+    : expression_list COMA expression {}
+
+#
+# class definition elements.
+#
+class_content
+    : OCURLY class_content_list CCURLY {}
+    : OCURLY CCURLY {}
+
+class_content_list
+    : class_content_element {}
+    : class_content_list class_content_element {}
+
+class_content_element
+    : scope_operator {}
+    : variable_declaration {}
+    : function_definition {}
+
+class_definition
+    : CLASS SYMBOL class_content {}
+    : CLASS SYMBOL OPAREN CPAREN class_content {}
+    : CLASS SYMBOL OPAREN compound_name CPAREN class_content {}
+
+#
+# Function definition
+#
+function_definition
+    : name_declaration OPAREN variable_declaration_list CPAREN function_body {}
+    : name_declaration OPAREN CPAREN function_body {}
+
+function_body
+    : OCURLY function_body_list CCURLY {}
+    : OCURLY CCURLY {}
+
+function_body_list
+    : function_body_element {}
+    : function_body_list function_body_element {}
+
+function_body_element
+    : function_body {}
+    : variable_declaration {}
+    : variable_declaration EQUAL op_assignment_rhs {}
+    : compound_reference {}
+    : compound_reference EQUAL op_assignment_rhs {}
+    : compound_reference operator_assignment {}
+    : if_clause {}
+    : try_clause {}
+    : while_clause {}
+    : do_clause {}
+    : RAISE OPAREN compound_name CPAREN {}
+    : PRINT single_expression {}
+    : RETURN single_expression {}
+    : TYPE single_expression {}
+    : YIELD OPAREN expression CPAREN {}
+    : BREAK {}
+    : CONTINUE {}
+    : TRACE {}
+
+single_expression
+    : OPAREN CPAREN {}
+    : OPAREN expression CPAREN {}
+
+assignment_rhs
+    : expression {}
+    : array_init {}
+    : dict_init {}
+    : bool_value {}
+
+op_assignment_rhs
+    : assignment_rhs {}
+    : type_name OPAREN assignment_rhs CPAREN {}
+
+operator_assignment
+    : ADD_ASSIGN expression {}
+    : SUB_ASSIGN expression {}
+    : MUL_ASSIGN expression {}
+    : DIV_ASSIGN expression {}
+    : MOD_ASSIGN expression {}
+
+array_init
+    : OSQUARE array_init_list CSQUARE {}
+
+array_init_list
+    : array_init_element {}
+    : array_init_list COMA array_init_element {}
+
+array_init_element
+    : expression {}
+    : array_init {}
+    : dict_init {}
+
+dict_init
+    : OSQUARE dict_init_list CSQUARE {}
+
+dict_init_list
+    : dict_init_element {}
+    : dict_init_list COMA dict_init_element {}
+
+dict_init_element
+    : STRG COLON expression {}
+    : STRG COLON array_init {}
+    : STRG COLON dict_init {}
+
+test_expression
+    : expression {}
+    : bool_value {}
+
+if_clause
+    : IF OPAREN test_expression CPAREN function_body else_clause {}
+
+else_clause
+    : else_clause_list {}
+    : else_clause_list else_clause_final {}
+    : else_clause_final {}
+
+else_clause_main
+    : ELSE OPAREN test_expression CPAREN function_body {}
+
+else_clause_list
+    : else_clause_main {}
+    : else_clause_list else_clause_main {}
+
+else_clause_final
+    : ELSE OPAREN CPAREN function_body {}
+    : ELSE function_body {}
+
+try_clause
+    : TRY function_body except_clause {}
+
+except_clause
+    : except_clause_list {}
+    : except_clause_list except_clause_final {}
+    : except_clause_final {}
+
+except_clause_main
+    : EXCEPT OPAREN compound_reference CPAREN function_body {}
+
+except_clause_list
+    : except_clause_main {}
+    : except_clause_list except_clause_main {}
+
+except_clause_final
+    : EXCEPT OPAREN CPAREN function_body {}
+    : EXCEPT function_body {}
+
+while_clause
+    : WHILE function_body {}
+    : WHILE OPAREN CPAREN function_body {}
+    : WHILE OPAREN test_expression CPAREN function_body {}
+
+do_clause
+    : DO function_body WHILE OPAREN CPAREN {}
+    : DO function_body WHILE OPAREN test_expression CPAREN {}

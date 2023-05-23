@@ -26,8 +26,8 @@ void* iterate_lst(PtrLst* lst);
     } N##_t;                         \
                                      \
     N##_t* N##_create();             \
-    void N##_add(N##_t* lst, T str); \
-    void N##_reset(N##_t* lst);      \
+    void N##_add(N##_t* lst, T ptr); \
+    T N##_reset(N##_t* lst);         \
     T N##_iterate(N##_t* lst);
 
 #define PTRLST_IMPL(N, T)                                       \
@@ -52,9 +52,10 @@ void* iterate_lst(PtrLst* lst);
         lst->len++;                                             \
     }                                                           \
                                                                 \
-    void N##_reset(N##_t* lst) {                                \
+    T N##_reset(N##_t* lst) {                                   \
                                                                 \
         lst->idx = 0;                                           \
+        return lst->list[0];                                    \
     }                                                           \
                                                                 \
     T N##_iterate(N##_t* lst) {                                 \

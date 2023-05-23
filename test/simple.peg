@@ -1,0 +1,258 @@
+
+%header {
+
+#include "memory.h"
+#include "fileio.h"
+#include "errors.h"
+#include "ast.h"
+
+}
+
+%source {
+
+#define PCC_MALLOC(auxil, size) mem_allocate(size)
+#define PCC_REALLOC(auxil, ptr, size) mem_reallocate(ptr, size)
+#define PCC_FREE(auxil, ptr) mem_free(ptr)
+#define PCC_GETCHAR(auxil) get_char()
+#define PCC_ERROR(auxil) generic_error()
+    void generic_error() {
+        fprintf(stderr, "syntax error: %s: %d: %d: generic error\n",
+                    file_name(), line_no(), col_no());
+        exit(1);
+    }
+
+#define TRACE(f, ...) do \
+    { \
+        printf("trace: "); \
+        printf(f, ## __VA_ARGS__); fputc('\n', stdout); \
+    } while(0)
+
+}
+
+%prefix "simple"
+%value "Ast*"
+
+module
+    <- _ m:module_item* _ end_of_file  { TRACE("module list"); }
+     / _ end_of_file { TRACE("file end"); }
+
+
+namespace_definition
+    <- _ NAMESPACE SP+ symbol _ '{' _ module_item* _ '}' {TRACE("namespace");}
+
+class_definition
+    <- _ CLASS SP+ <symbol> _ '(' _ <compound_name> _ ')' _ '{' _ class_content* _ '}' {
+                TRACE("class definition with parameter");
+            }
+     / _ CLASS SP+ <symbol> _ '(' _ ')' _ '{' _ class_content* _ '}' {
+                TRACE("class definition no parameter but with parens");
+            }
+     / _ CLASS SP+ <symbol> _ '{' _ class_content* _ '}' {
+                TRACE("class definition no parameter and no parens");
+            }
+
+class_content
+    <- _ variable_definition _ '=' _ expression _ { TRACE("class_content:="); }
+     / _ variable_definition _ { TRACE("class_content:variable_definition"); }
+     / _ scope_operator _ { TRACE("class_content:scope_operator"); }
+     / _ assignment _ { TRACE("module_item:assignment"); }
+
+import_definition
+    <-  _ IMPORT SP+ compound_name (SP+ AS SP+ symbol)? { TRACE("IMPORT"); }
+
+variable_definition
+    <-  _ type_spec SP+ compound_name _ { TRACE("var def"); }
+
+array_reference
+    <- symbol _ '[' _ expression _ ']' { TRACE("array_reference:"); }
+
+function_reference
+    <- symbol _ '(' _ expression_list _ ')' { TRACE("function_reference:(expr)"); }
+     / symbol _ '(' _ ')' { TRACE("function_reference:()"); }
+
+expression_list
+    <- expression _ ',' _ expression_list { TRACE("expression_list: ,"); }
+     / expression { TRACE("expression_list:"); }
+
+compound_lhs_element
+    <- symbol { TRACE("compound_lhs_element:symbol"); }
+     / array_reference { TRACE("compound_lhs_element:array_reference"); }
+
+compound_lhs_reference
+    <- compound_lhs_element '.' compound_lhs_reference { TRACE("compound_lhs_reference: ."); }
+     / compound_lhs_element { TRACE("compound_lhs_reference:"); }
+
+compound_rhs_element
+    <- compound_lhs_element { TRACE("compound_rhs_element:compound_lhs_element"); }
+     / function_reference { TRACE("compound_rhs_element:function_reference"); }
+
+compound_rhs_reference
+    <- compound_rhs_element '.' compound_rhs_reference { TRACE("compound_rhs_reference: ."); }
+     / compound_rhs_element { TRACE("compound_rhs_reference:"); }
+
+compound_name
+    <-  <symbol> '.' compound_name { TRACE("compound_name:symbol: %s .", $1); }
+    /   <symbol> { TRACE("compound_name:symbol: %s", $2); }
+
+assignment
+    <- _ compound_name _ '=' _ expression { TRACE("assignemnt:"); }
+
+module_item
+    <- _ scope_operator _ { TRACE("module_item:scope_operator"); }
+     / _ class_definition _ { TRACE("module_item:class_definition"); }
+     / _ import_definition _ { TRACE("module_item:import_definition"); }
+     / _ namespace_definition _ { TRACE("module_item:namespace_definition"); }
+
+expression
+    <- expr_combo { TRACE("expression:expr_combo"); }
+
+expr_combo
+    <- expr_combo _ AND _ expr_equality { TRACE("expr_combo:AND"); }
+     / expr_combo _ OR _ expr_equality { TRACE("expr_combo:OR"); }
+     / expr_equality
+
+expr_equality
+    <- expr_equality _ '==' _ expr_magnitude { TRACE("expr_equality:=="); }
+     / expr_equality _ '!=' _ expr_magnitude { TRACE("expr_equality:!="); }
+     / expr_magnitude
+
+expr_magnitude
+    <- expr_magnitude _ '<' _ expr_term { TRACE("expr_magnitude:<"); }
+     / expr_magnitude _ '>' _ expr_term { TRACE("expr_magnitude:>"); }
+     / expr_magnitude _ '<=' _ expr_term { TRACE("expr_magnitude:<="); }
+     / expr_magnitude _ '>=' _ expr_term { TRACE("expr_magnitude:>="); }
+     / expr_term
+
+expr_term
+    <- expr_term _ '+' _ expr_factor { TRACE("expr_term:+"); }
+     / expr_term _ '-' _ expr_factor { TRACE("expr_term:-"); }
+     / expr_factor
+
+expr_factor
+    <- expr_factor _ '*' _ expr_unary { TRACE("expr_factor:*"); }
+     / expr_factor _ '/' _ expr_unary { TRACE("expr_factor:/"); }
+     / expr_factor _ '%' _ expr_unary { TRACE("expr_factor:%%"); }
+     / expr_unary
+
+expr_unary
+    <- '-' _ expr_unary { TRACE("expr_unary:-"); }
+     / '+' _ expr_unary { TRACE("expr_unary:+"); }
+     / NOT _ expr_unary { TRACE("expr_unary:NOT"); }
+     / expr_primary
+
+expr_primary
+    <- compound_rhs_reference { TRACE("expr_primary:compound_rhs_reference"); }
+     / number { TRACE("expr_primary:number"); }
+     / quoted_string { TRACE("expr_primary:quoted_string"); }
+     / '(' _ expression _ ')' { TRACE("expr_primary:(expression)"); }
+     / '(' _ type_name _ ')' _ expression { TRACE("expr_primary:(type_name)expression"); }
+
+quoted_string
+    <- ["] <(!["] .)*> ["] { TRACE("double quoted string: \"%s\"", $1); }
+     / ['] <(!['] .)*> ['] { TRACE("single quoted string: \"%s\"", $2); }
+
+symbol
+    <- !keyword <L(L/D)*> { TRACE("symbol: %s", $1); }
+
+keyword
+    <- scope_operator {}
+     / type_name {}
+     / CLASS {}
+     / NAMESPACE {}
+     / IMPORT {}
+     / AS {}
+     / BREAK {}
+     / CONTINUE {}
+     / DO {}
+     / ELSE {}
+     / IF {}
+     / RETURN {}
+     / TRY {}
+     / EXCEPT {}
+     / RAISE {}
+     / TRUE {}
+     / FALSE {}
+     / YIELD {}
+     / WHILE {}
+     / PRINT {}
+     / TRACE {}
+     / TYPE {}
+     / OR {}
+     / AND {}
+     / NOT {}
+
+type_spec
+    <- type_name {}
+     / CONST type_name {}
+
+CLASS   <- 'class' !(L/D)
+NAMESPACE <- 'namespace' !(L/D)
+IMPORT  <- 'import' !(L/D)
+AS      <- 'as' !(L/D)
+BREAK   <- 'break' !(L/D)
+CONTINUE <- 'continue' !(L/D)
+DO      <- 'do' !(L/D)
+ELSE    <- 'else' !(L/D)
+IF      <- 'if' !(L/D)
+RETURN  <- 'return' !(L/D)
+TRY     <- 'try' !(L/D)
+EXCEPT  <- 'except' !(L/D)
+RAISE   <- 'raise' !(L/D)
+TRUE    <- 'true' !(L/D)
+FALSE   <- 'false' !(L/D)
+YIELD   <- 'yield' !(L/D)
+WHILE   <- 'while' !(L/D)
+PRINT   <- 'print' !(L/D)
+TRACE   <- 'trace' !(L/D)
+TYPE    <- 'type' !(L/D)
+OR      <- 'or' !(L/D) / '||'
+AND     <- 'and' !(L/D) / '&&'
+NOT     <- 'not' !(L/D) / '!'
+
+type_name
+    <- INTEGER { TRACE("type_name:INTEGER");}
+     / UNSIGNED { TRACE("type_name:UNSIGNED");}
+     / FLOAT { TRACE("type_name:FLOAT");}
+     / STRING { TRACE("type_name:STRING");}
+     / LIST { TRACE("type_name:LIST");}
+     / DICT { TRACE("type_name:DICT");}
+     / BOOL { TRACE("type_name:BOOL");}
+     / compound_name { TRACE("type_name:compound_name");}
+
+INTEGER <- 'integer'!(L/D) / 'int'!(L/D)
+UNSIGNED <- 'unsigned'!(L/D) / 'uint'!(L/D)
+FLOAT   <- 'float'!(L/D)
+STRING  <- 'string'!(L/D) / 'str'!(L/D)
+LIST    <- 'list'!(L/D)
+DICT    <- 'dict'!(L/D)
+BOOL    <- 'bool'!(L/D) / 'boolean'!(L/D)
+CONST   <- 'const'!(L/D) / 'constant'!(L/D)
+
+scope_operator
+    <- PUBLIC { TRACE("scope_operator:PUBLIC"); }
+     / PRIVATE { TRACE("scope_operator:PRIVATE"); }
+     / PROTECTED { TRACE("scope_operator:PROTECTED"); }
+PUBLIC  <- 'public'!(L/D)
+PRIVATE <- 'private'!(L/D)
+PROTECTED <- 'protected'!(L/D)
+
+# Literal number
+number
+    <- _ <D*'.'D+([eE][-+]?D+)?> { TRACE("fnum: %s", $1); }
+     / _ <!'0'D+> { TRACE("inum: %s", $2); }
+     / _ <'0'[xX]X+> { TRACE("unum: %s", $3); }
+
+# C++ style comments
+comment <- '/*' (!"*/" .)* '*/' / '//' [^\n]*
+
+# Misc patterns used everywhere
+_   <- SP*
+SP  <- BL / comment / NL
+BL  <- [ \t\v\f]
+NL  <- '\n' / '\r\n' / '\r'
+D   <- [0-9]
+X   <- [0-9a-fA-F]
+L   <- [a-zA-Z_]
+end_of_file <- !.
+
+%%

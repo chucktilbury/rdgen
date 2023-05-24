@@ -1,34 +1,19 @@
 #ifndef _PTRLST_H
 #define _PTRLST_H
 
-#include <stddef.h>
-
-/*
-typedef struct {
-    void** list;
-    size_t len;
-    size_t cap;
-    size_t idx;
-} PtrLst;
-
-PtrLst* create_lst();
-void add_lst(PtrLst* lst, void* str);
-void reset_lst(PtrLst* lst);
-void* iterate_lst(PtrLst* lst);
-*/
-
 #define PTRLST_HEADER(N, T)          \
     typedef struct {                 \
         T* list;                     \
-        size_t len;                  \
-        size_t cap;                  \
-        size_t idx;                  \
+        unsigned int len;            \
+        unsigned int cap;            \
+        unsigned int idx;            \
     } N##_t;                         \
                                      \
     N##_t* N##_create();             \
     void N##_add(N##_t* lst, T ptr); \
     T N##_reset(N##_t* lst);         \
-    T N##_iterate(N##_t* lst);
+    T N##_iterate(N##_t* lst);       \
+    T N##_get(N##_t* lst, unsigned int idx);
 
 #define PTRLST_IMPL(N, T)                                       \
                                                                 \
@@ -60,15 +45,49 @@ void* iterate_lst(PtrLst* lst);
                                                                 \
     T N##_iterate(N##_t* lst) {                                 \
                                                                 \
-        T ptr = NULL;                                           \
-                                                                \
-        if(lst->idx < lst->len) {                               \
-            ptr = lst->list[lst->idx];                          \
+        if(lst->idx >= lst->len)                                \
+            return NULL;                                        \
+        else {                                                  \
             lst->idx++;                                         \
+            return lst->list[lst->idx];                         \
         }                                                       \
+    }                                                           \
                                                                 \
-        return ptr;                                             \
+    T N##_get(N##_t* lst, unsigned int idx) {                   \
+                                                                \
+        if(idx < lst->len)                                      \
+            return lst->list[idx];                              \
+        else                                                    \
+            return NULL;                                        \
     }
 
+/*
+ * Example:
+ *
+ * FOR(Type, item, name_lst, list)
+ *
+ * Produces:
+ *
+ * for(Type* item = name_lst_reset(list);
+ *          item != NULL;
+ *          item = name_lst_iterate(list))
+ *
+ */
+#define FOR_LST(T, I, N, L) for(T* I = N##_reset(L); I != NULL; I = N##_iterate(L))
+
+/*
+ * Example:
+ *
+ * WHILE(item, name_lst, list)
+ *
+ * Produces:
+ *
+ * item = name_lst_reset(list);
+ * while(NULL != (item = name_lst_iterate(L)))
+ *
+ */
+#define WHILE_LST(I, N, L) \
+    I = N##_reset(L);      \
+    while(NULL != (I = N##_iterate(L)))
 
 #endif

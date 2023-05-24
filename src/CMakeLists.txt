@@ -5,17 +5,16 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ./)
 
 add_executable(${PROJECT_NAME}
     memory.c
-    #ast.c
     parser.c
     strs.c
     rdpgen.c
     dump.c
     preproc.c
-#    hash.c
     fileio.c
     scanner.c
     parser.c
     errors.c
+    emit.c
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -35,10 +34,10 @@ target_compile_options(${PROJECT_NAME}
         #-Wno-sign-compare
         #-Wno-unused-variable
         #-Wno-parentheses-equality
+        -DUSE_GC
         $<$<CONFIG:DEBUG>:-g3 >
         $<$<CONFIG:DEBUG>:-Og >
         #$<$<CONFIG:DEBUG>:-DMEMORY_DEBUG >
-        $<$<CONFIG:DEBUG>:-DENA_TRACE >
         $<$<CONFIG:DEBUG>:-DENABLE_TRACE >
         $<$<CONFIG:DEBUG>:-DENABLE_DUMP >
         $<$<CONFIG:RELEASE>:-Ofast >

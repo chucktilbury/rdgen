@@ -1,30 +1,29 @@
 #include <stdio.h>
 
+#include "dump.h"
+#include "emit.h"
 #include "errors.h"
 #include "memory.h"
-#include "rdpgen.h"
-#include "dump.h"
 #include "parser.h"
 #include "preproc.h"
+#include "rdpgen.h"
 
 /*
  * Main entry point.
  */
 int main(int argc, char** argv) {
 
-    if(argc < 2)
-        fatal("file name is required");
+    Pstate* state = parse_input(argc > 1? argv[1]: NULL);
 
-    Pstate* state = parse_input(argv[1]);
+    if(get_errors() == 0)
+        pre_process(state);
 
-    pre_process(state);
     if(get_errors() == 0) {
-        //emit_ast(state);
-        //emit_parser(state);
+        emit(state);
         dump_state(state);
     }
 
-    printf("errors: %d\n", get_errors());
+    fprintf(stdout, "errors: %d\n", get_errors());
 
     return 0;
 }

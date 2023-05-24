@@ -1,15 +1,16 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "parser.h"
-#include "scanner.h"
+#include "errors.h"
 #include "fileio.h"
 #include "memory.h"
-#include "errors.h"
+#include "parser.h"
+#include "scanner.h"
 
 PTRLST_IMPL(str_lst, Str*)
 PTRLST_IMPL(rule_lst, Rule*)
 PTRLST_IMPL(pattern_lst, Pattern*)
+PTRLST_IMPL(pat_elem_lst, PatElem*)
 
 static Pstate* create_parser(const char* fname) {
 
@@ -37,12 +38,15 @@ static Pattern* parse_pattern() {
 
     Token tok;
     Pattern* pat = _alloc_obj(Pattern);
-    pat->lst = str_lst_create();
+    pat->elems     = pat_elem_lst_create();
 
     consume_token(&tok);
 
     while(tok.type == SYMBOL) {
-        str_lst_add(pat->lst, create_str(tok.str->buffer));
+        PatElem* pe = _alloc_obj(PatElem);
+        pe->str = create_str(tok.str->buffer);
+        pe->is_terminal = false;
+        pat_elem_lst_add(pat->elems, pe);
         consume_token(&tok);
     }
 
@@ -54,30 +58,27 @@ static Pattern* parse_pattern() {
     return pat;
 }
 
+/**
+ * @brief Parse a rule. When this is entered, the rule name has been read.
+ *
+ * @param state
+ */
 static void parse_rule(Pstate* state) {
 
     Token tok;
-    get_token(&tok); // consume the directive name
+    get_token(&tok); // capture the rule name
 
-    if(tok.type == SYMBOL) {
-        Rule* rule = _alloc_obj(Rule);
-        rule->patterns = pattern_lst_create();
+    Rule* rule     = _alloc_obj(Rule);
+    rule->patterns = pattern_lst_create();
+    rule->name = create_str(tok.str->buffer);
 
-        get_token(&tok);
-        rule->name = create_str(tok.str->buffer);
-
-        while(consume_token(&tok) == COLON) {
-            pattern_lst_add(rule->patterns, parse_pattern());
-        }
-        if(rule->patterns->len == 0)
-            syntax("expected a rule pattern but got a %s", tok_to_str(get_token(NULL)));
-
-        rule_lst_add(state->rules, rule);
+    while(consume_token(&tok) == COLON) {
+        pattern_lst_add(rule->patterns, parse_pattern());
     }
-    else
-        syntax("expected a symbol to start a rule but got a %s", tok_to_str(tok.type));
+    if(rule->patterns->len == 0)
+        syntax("expected a rule pattern but got a %s", tok_to_str(get_token(NULL)));
 
-    //consume_token(NULL); // consume the number
+    rule_lst_add(state->rules, rule);
 }
 
 static void parse_verbo(Pstate* state) {
@@ -186,18 +187,36 @@ Pstate* parse_input(const char* fname) {
     while(!finished && get_errors() == 0) {
         TokenType type = get_token(NULL);
         switch(type) {
-            case SYMBOL:        parse_rule(state);          break;
-            case VERBOSITY:     parse_verbo(state);         break;
-            case AST_NAME:      parse_ast_name(state);      break;
-            case PARSER_NAME:   parse_parser_name(state);   break;
-            case AST_CODE:      parse_ast_code(state);      break;
-            case PARSER_CODE:   parse_parser_code(state);   break;
-            case AST_HEADER:    parse_ast_header(state);    break;
-            case PARSER_HEADER: parse_parser_header(state); break;
-            case END_OF_INPUT:  finished = true;            break;
+            case SYMBOL:
+                parse_rule(state);
+                break;
+            case VERBOSITY:
+                parse_verbo(state);
+                break;
+            case AST_NAME:
+                parse_ast_name(state);
+                break;
+            case PARSER_NAME:
+                parse_parser_name(state);
+                break;
+            case AST_CODE:
+                parse_ast_code(state);
+                break;
+            case PARSER_CODE:
+                parse_parser_code(state);
+                break;
+            case AST_HEADER:
+                parse_ast_header(state);
+                break;
+            case PARSER_HEADER:
+                parse_parser_header(state);
+                break;
+            case END_OF_INPUT:
+                finished = true;
+                break;
             default:
                 syntax("expected rule or directive but got %s", tok_to_str(type));
-       }
+        }
     }
 
     return state;

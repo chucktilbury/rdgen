@@ -19,5 +19,8 @@ int find_str(Str* str, const char* s);
 void clear_str(Str* str);
 int comp_str(Str* base, const char* str);
 Str* clip_str(Str* base, int start, int end);
+void upcase_str(Str* str);
+void downcase_str(Str* str);
+Str* copy_str(Str* str);
 
 #endif

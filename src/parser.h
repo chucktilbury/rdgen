@@ -4,18 +4,26 @@
 #include <stdbool.h>
 
 typedef struct pattern_t Pattern;
+typedef struct pat_elem_t PatElem;
 typedef struct rule_t Rule;
 
+#include "parser.h"
 #include "ptrlst.h"
 #include "strs.h"
-#include "parser.h"
 
 PTRLST_HEADER(str_lst, Str*)
 PTRLST_HEADER(rule_lst, Rule*)
 PTRLST_HEADER(pattern_lst, Pattern*)
+PTRLST_HEADER(pat_elem_lst, PatElem*)
+
+struct pat_elem_t {
+    Str* str;
+    bool is_terminal;
+};
 
 struct pattern_t {
-    str_lst_t* lst;
+    //str_lst_t* lst;
+    pat_elem_lst_t* elems;
     Str* code; // C code to run upon a pattern match
 };
 

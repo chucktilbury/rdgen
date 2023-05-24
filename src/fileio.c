@@ -1,9 +1,9 @@
 
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <errno.h>
 #include <ctype.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "errors.h"
 #include "memory.h"
@@ -11,13 +11,16 @@
 static FILE* fp;
 static const char* fname;
 static int line_no = 1;
-static int col_no = 1;
+static int col_no  = 1;
 static const char* buffer;
 static int bidx = 0;
 
 #define CHAR buffer[bidx]
 
 void read_file(const char* fname) {
+
+    if(fname == NULL)
+        FATAL("file name is required");
 
     fp = fopen(fname, "r");
     if(fp == NULL)
@@ -27,8 +30,8 @@ void read_file(const char* fname) {
     size_t len = ftell(fp);
     rewind(fp);
 
-    buffer = _alloc(len+sizeof(int));
-    memset((void*)buffer, 0xFF, len+sizeof(int));
+    buffer = _alloc(len + sizeof(int));
+    memset((void*)buffer, 0xFF, len + sizeof(int));
     fread((void*)buffer, sizeof(char), len, fp);
 
     fclose(fp);
@@ -80,4 +83,3 @@ const char* get_name() {
 
     return fname;
 }
-

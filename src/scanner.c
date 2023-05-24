@@ -1,21 +1,22 @@
 
-#include <string.h>
-#include <stdbool.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <string.h>
 
-#include "scanner.h"
+#include "errors.h"
 #include "fileio.h"
 #include "memory.h"
-#include "errors.h"
+#include "scanner.h"
 
-#define IS_SYMBOL(c)    (isalpha(c) || (c) == '_')
-#define IS_SYMBOL1(c)   (isalnum(c) || (c) == '_')
+#define IS_SYMBOL(c) (isalpha(c) || (c) == '_')
+#define IS_SYMBOL1(c) (isalnum(c) || (c) == '_')
 #if 0
-#define TEST_EOF(f, ...) do { \
-        if(get_char() > 0x7F) \
-            syntax((f), ## __VA_ARGS__); \
-            fatal("unexpected end of file"); \
+#define TEST_EOF(f, ...)                 \
+    do {                                 \
+        if(get_char() > 0x7F)            \
+            syntax((f), ##__VA_ARGS__);  \
+        fatal("unexpected end of file"); \
     } while(false)
 #endif
 
@@ -51,7 +52,7 @@ static void get_directive() {
     while(IS_SYMBOL(ch)) {
         cat_str_char(_tok.str, ch);
         ch = consume_char();
-        //TEST_EOF("invalid directive: %s", _tok.str->buffer);
+        // TEST_EOF("invalid directive: %s", _tok.str->buffer);
         check_eof("invalid directive: %s", _tok.str->buffer);
     }
 
@@ -83,7 +84,7 @@ static void get_string() {
     while(ch != '\"') {
         cat_str_char(_tok.str, ch);
         ch = consume_char();
-        //TEST_EOF("invalid string");
+        // TEST_EOF("invalid string");
         check_eof("invalid string");
     }
 
@@ -153,7 +154,7 @@ TokenType get_token(Token* tok) {
 
     if(tok != NULL) {
         tok->type = _tok.type;
-        tok->str = create_str(_tok.str->buffer);
+        tok->str  = create_str(_tok.str->buffer);
     }
     return _tok.type;
 }
@@ -163,7 +164,7 @@ TokenType consume_token(Token* tok) {
     bool finished = false;
 
     if(_tok.str != NULL)
-        truncate_str(_tok.str, 0);
+        clear_str(_tok.str);
     else
         _tok.str = create_str(NULL);
 
@@ -172,7 +173,7 @@ TokenType consume_token(Token* tok) {
         switch((unsigned char)get_char()) {
             case 0xFF:
                 _tok.type = END_OF_INPUT;
-                finished = true;
+                finished  = true;
                 break;
             case '#':
                 consume_comment();
@@ -205,7 +206,7 @@ TokenType consume_token(Token* tok) {
     }
 
     if(tok != NULL) {
-        tok->str = create_str(_tok.str->buffer);
+        tok->str  = create_str(_tok.str->buffer);
         tok->type = _tok.type;
     }
 
@@ -214,17 +215,18 @@ TokenType consume_token(Token* tok) {
 
 const char* tok_to_str(TokenType type) {
 
-    return (type == ERROR)? "error token" :
-        (type == BLOCK)? "block definition" :
-        (type == COLON)? ":" :
-        (type == SYMBOL)? "symbol definition" :
-        (type == STRG)? "quoted string" :
-        (type == NUMBER)? "number" :
-        (type == VERBOSITY)? "verbosity directive" :
-        (type == AST_NAME)? "ast_name directive" :
-        (type == PARSER_NAME)? "parser_name directive" :
-        (type == AST_CODE)? "ast_code directive" :
-        (type == PARSER_CODE)? "parser_code directive" :
-        (type == AST_HEADER)? "ast_header directive" :
-        (type == PARSER_HEADER)? "parser_header directive" : "UNKNOWN";
+    return (type == ERROR)  ? "error token" :
+    (type == BLOCK)         ? "block definition" :
+    (type == COLON)         ? ":" :
+    (type == SYMBOL)        ? "symbol definition" :
+    (type == STRG)          ? "quoted string" :
+    (type == NUMBER)        ? "number" :
+    (type == VERBOSITY)     ? "verbosity directive" :
+    (type == AST_NAME)      ? "ast_name directive" :
+    (type == PARSER_NAME)   ? "parser_name directive" :
+    (type == AST_CODE)      ? "ast_code directive" :
+    (type == PARSER_CODE)   ? "parser_code directive" :
+    (type == AST_HEADER)    ? "ast_header directive" :
+    (type == PARSER_HEADER) ? "parser_header directive" :
+                              "UNKNOWN";
 }

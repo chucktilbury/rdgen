@@ -129,3 +129,23 @@ Str* clip_str(Str* base, int start, int end) {
 
     return retv;
 }
+
+// Make string uppercase
+void upcase_str(Str* str) {
+
+    for(char* ptr = str->buffer; *ptr != '\0'; ptr++)
+        *ptr = toupper(*ptr);
+}
+
+// Make string lower case
+void downcase_str(Str* str) {
+
+    for(char* ptr = str->buffer; *ptr != '\0'; ptr++)
+        *ptr = tolower(*ptr);
+}
+
+// Make a copy of the string
+Str* copy_str(Str* str) {
+
+    return create_str(str->buffer);
+}

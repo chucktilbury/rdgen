@@ -1,18 +1,18 @@
+#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 
-#include "parser.h"
 #include "errors.h"
+#include "parser.h"
 
 
-// Returns true if the string is in the str_lst.
+// Returns true if the string is in the str_lst. This has to work without
+// disturbing the state of the actual list.
 bool str_in_lst(str_lst_t* lst, const char* str) {
 
-    Str* s = str_lst_reset(lst);
-    while(s != NULL) {
-        if(!strcmp(s->buffer, str))
+    for(unsigned int i = 0; i < lst->len; i++) {
+        if(!strcmp(lst->list[i]->buffer, str))
             return true;
-        s = str_lst_iterate(lst);
     }
 
     return false;
@@ -22,8 +22,7 @@ bool str_in_lst(str_lst_t* lst, const char* str) {
 // already in the terminal list then return true.
 static bool is_term(Pstate* state, Str* s) {
 
-    if(!str_in_lst(state->terminals, s->buffer)
-                && !str_in_lst(state->non_terminals, s->buffer))
+    if(!str_in_lst(state->terminals, s->buffer) && !str_in_lst(state->non_terminals, s->buffer))
         return true;
     else
         return false;
@@ -31,8 +30,7 @@ static bool is_term(Pstate* state, Str* s) {
 
 static void make_non_terms(Pstate* state) {
 
-    rule_lst_reset(state->rules);
-    for(Rule* r = rule_lst_iterate(state->rules); r != NULL; r = rule_lst_iterate(state->rules)) {
+    FOR_LST(Rule, r, rule_lst, state->rules) {
         if(!str_in_lst(state->non_terminals, r->name->buffer))
             str_lst_add(state->non_terminals, r->name);
         else {
@@ -43,15 +41,14 @@ static void make_non_terms(Pstate* state) {
 
 static void make_terms(Pstate* state) {
 
-    rule_lst_reset(state->rules);
-    for(Rule* r = rule_lst_iterate(state->rules); r != NULL; r = rule_lst_iterate(state->rules)) {
-        pattern_lst_reset(r->patterns);
-        for(Pattern* p = pattern_lst_iterate(r->patterns); p != NULL; p = pattern_lst_iterate(r->patterns)) {
-            str_lst_reset(p->lst);
-            for(Str* s = str_lst_iterate(p->lst); s != NULL; s = str_lst_iterate(p->lst)) {
+    FOR_LST(Rule, r, rule_lst, state->rules) {
+        FOR_LST(Pattern, p, pattern_lst, r->patterns) {
+            FOR_LST(PatElem, pe, pat_elem_lst, p->elems) {
                 // printf("%s ", s->buffer);
-                if(is_term(state, s))
-                    str_lst_add(state->terminals, s);
+                if(is_term(state, pe->str)) {
+                    str_lst_add(state->terminals, pe->str);
+                    pe->is_terminal = true;
+                }
             }
         }
     }
@@ -62,4 +59,3 @@ void pre_process(Pstate* state) {
     make_non_terms(state);
     make_terms(state);
 }
-

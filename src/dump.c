@@ -1,13 +1,12 @@
 
-#include <stdio.h>
 #include "dump.h"
+#include <stdio.h>
 
 static void dump_str_lst(str_lst_t* lst, const char* label, int verbo) {
 
     if(verbo > 5) {
-        printf("\n----- %s (%lu) -----\n", label, lst->len);
-        str_lst_reset(lst);
-        for(Str* item = str_lst_iterate(lst); item != NULL; item = str_lst_iterate(lst))
+        printf("\n----- %s (%u) -----\n", label, lst->len);
+        FOR_LST(Str, item, str_lst, lst)
             printf("%s\n", item->buffer);
     }
 }
@@ -15,16 +14,13 @@ static void dump_str_lst(str_lst_t* lst, const char* label, int verbo) {
 static void dump_rules(Pstate* state) {
 
     if(state->verbo > 3) {
-        printf("----- rules (%lu) -----\n\n", state->rules->len);
-        rule_lst_reset(state->rules);
-        for(Rule* r = rule_lst_iterate(state->rules); r != NULL; r = rule_lst_iterate(state->rules)) {
+        printf("----- rules (%u) -----\n\n", state->rules->len);
+        FOR_LST(Rule, r, rule_lst, state->rules) {
             printf("%s - recursive:%s\n", r->name->buffer, r->is_recursive ? "true" : "false");
-            pattern_lst_reset(r->patterns);
-            for(Pattern* p = pattern_lst_iterate(r->patterns); p != NULL; p = pattern_lst_iterate(r->patterns)) {
+            FOR_LST(Pattern, p, pattern_lst, r->patterns) {
                 printf("\t: ");
-                str_lst_reset(p->lst);
-                for(Str* s = str_lst_iterate(p->lst); s != NULL; s = str_lst_iterate(p->lst)) {
-                    printf("%s ", s->buffer);
+                FOR_LST(PatElem, pe, pat_elem_lst, p->elems) {
+                    printf("%s ", pe->str->buffer);
                 }
                 printf("\n");
             }

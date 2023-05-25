@@ -1,32 +1,41 @@
 
-#include <errno.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdarg.h>
+#include <errno.h>
 #include <string.h>
 
 #include "emit.h"
 #include "preproc.h"
+#include "emit_ast.h"
+#include "emit_parser.h"
+#include "errors.h"
 
-#define EMIT(fmt, ...) emit_str(fp, (fmt), ##__VA_ARGS__)
+#define TESTING 0
 
-static FILE* open_outfile(Str* name) {
-#if 0
-    FILE* fp = fopen(name->buffer, "w");
+static FILE* fp = NULL;
+
+void open_outfile(Str* name) {
+
+#if TESTING == 0
+    fp = fopen(name->buffer, "w");
+    if(fp == NULL) {
+        FATAL("cannot open output file: \"%s\": %s", name, strerror(errno));
+    }
 #else
     (void)name;
-    FILE*fp = stdout;
+    fp = stdout;
 #endif
 
-    return fp;
 }
 
-static void close_outfile(FILE* fp) {
+void close_outfile() {
 
-    (void)fp;
+#if TESTING == 0
+    fclose(fp);
+#endif
 }
 
-static void emit_str(FILE* fp, const char* fmt, ...) {
+void emit_str(const char* fmt, ...) {
 
     va_list args;
 
@@ -35,76 +44,10 @@ static void emit_str(FILE* fp, const char* fmt, ...) {
     va_end(args);
 }
 
-static void emit_ast_types(FILE* fp, str_lst_t* lst) {
-
-    EMIT("typedef enum {\n");
-    FOR_LST(Str, s, str_lst, lst) {
-        Str* tmp = copy_str(s);
-        upcase_str(tmp);
-        EMIT("  AST_%s,\n", tmp->buffer);
-    }
-    EMIT("} AstType;\n\n");
-}
-
-static void emit_typedefs(FILE* fp, str_lst_t* lst) {
-
-    FOR_LST(Str, s, str_lst, lst)
-        EMIT("typedef struct _%s_ %s_t;\n", s->buffer, s->buffer);
-
-    EMIT("\n");
-}
-
-static void emit_data(FILE* fp, Rule* rule) {
-
-    EMIT("struct _%s_ {\n  Ast ast;\n", rule->name->buffer);
-
-    str_lst_t* stmp = str_lst_create();
-    FOR_LST(Pattern, p, pattern_lst, rule->patterns) {
-        // make a list of unique strings
-        FOR_LST(PatElem, pe, pat_elem_lst, p->elems) {
-            if(!str_in_lst(stmp, pe->str->buffer) && !pe->is_terminal)
-                str_lst_add(stmp, pe->str);
-        }
-    }
-
-    if(stmp->len > 0)
-        // emit the unique list
-        FOR_LST(Str, s, str_lst, stmp)
-            EMIT("  %s_t* m_%s;\n", s->buffer, s->buffer);
-    else
-        EMIT("  TokenType type\n");
-
-    EMIT("};\n\n");
-}
-
-static void emit_data_structures(FILE* fp, rule_lst_t* rules) {
-
-    FOR_LST(Rule, r, rule_lst, rules)
-        emit_data(fp, r);
-}
-
-static void ast_header(Pstate* state) {
-
-    Str* tmp = create_str(state->ast_name->buffer);
-    cat_str_str(tmp, ".h");
-
-    FILE* fp = open_outfile(tmp);
-
-    EMIT("// This file is generated: DO NOT EDIT\n");
-    tmp = copy_str(state->ast_name);
-    upcase_str(tmp);
-    cat_str_str(tmp, "_H");
-    EMIT("#ifndef _%s\n#define _%s\n\n", tmp->buffer, tmp->buffer);
-    emit_ast_types(fp, state->non_terminals);
-    emit_typedefs(fp, state->non_terminals);
-    EMIT("typedef struct {\n  AstType type;\n} Ast;\n\n");
-    emit_data_structures(fp, state->rules);
-
-    EMIT("#endif\n\n");
-    close_outfile(fp);
-}
-
 void emit(Pstate* state) {
 
-    ast_header(state);
+    if(get_errors() == 0) {
+        emit_ast(state);
+        emit_parser(state);
+    }
 }

@@ -1,3 +1,4 @@
+%ast_name "ast"
 
 %parser_code {
 

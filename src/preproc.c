@@ -6,18 +6,6 @@
 #include "parser.h"
 
 
-// Returns true if the string is in the str_lst. This has to work without
-// disturbing the state of the actual list.
-bool str_in_lst(str_lst_t* lst, const char* str) {
-
-    for(unsigned int i = 0; i < lst->len; i++) {
-        if(!strcmp(lst->list[i]->buffer, str))
-            return true;
-    }
-
-    return false;
-}
-
 // if the string is not in the non-terminal list and the string is not
 // already in the terminal list then return true.
 static bool is_term(Pstate* state, Str* s) {

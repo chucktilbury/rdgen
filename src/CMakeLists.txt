@@ -15,6 +15,9 @@ add_executable(${PROJECT_NAME}
     parser.c
     errors.c
     emit.c
+    emit_ast.c
+    emit_parser.c
+    utils.c
 )
 
 target_include_directories(${PROJECT_NAME}

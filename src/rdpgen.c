@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
 
     if(get_errors() == 0) {
         emit(state);
-        dump_state(state);
+        //dump_state(state);
     }
 
     fprintf(stdout, "errors: %d\n", get_errors());

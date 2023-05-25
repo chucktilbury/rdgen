@@ -10,6 +10,7 @@ typedef struct {
 } Str;
 
 Str* create_str(const char* str);
+Str* create_str_fmt(const char* fmt, ...);
 int cat_str_char(Str* ptr, int ch);
 int cat_str_str(Str* ptr, const char* str);
 Str* dup_str(Str* ptr);

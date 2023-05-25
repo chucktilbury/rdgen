@@ -3,18 +3,10 @@
 
 #include <stdbool.h>
 
-typedef struct pattern_t Pattern;
-typedef struct pat_elem_t PatElem;
-typedef struct rule_t Rule;
-
 #include "parser.h"
 #include "ptrlst.h"
 #include "strs.h"
-
-PTRLST_HEADER(str_lst, Str*)
-PTRLST_HEADER(rule_lst, Rule*)
-PTRLST_HEADER(pattern_lst, Pattern*)
-PTRLST_HEADER(pat_elem_lst, PatElem*)
+#include "utils.h"
 
 struct pat_elem_t {
     Str* str;

@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "memory.h"
 #include "strs.h"
@@ -17,6 +18,23 @@ Str* create_str(const char* str) {
         cat_str_str(ptr, str);
 
     return ptr;
+}
+
+Str* create_str_fmt(const char* fmt, ...) {
+
+    va_list args;
+
+    va_start(args, fmt);
+    size_t len = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+
+    char* str = _alloc(len+2);
+
+    va_start(args, fmt);
+    vsnprintf(str, len+2, fmt, args);
+    va_end(args);
+
+    return create_str(str);
 }
 
 int cat_str_char(Str* str, int ch) {

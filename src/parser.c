@@ -4,13 +4,9 @@
 #include "errors.h"
 #include "fileio.h"
 #include "memory.h"
-#include "parser.h"
+//#include "parser.h"
 #include "scanner.h"
-
-PTRLST_IMPL(str_lst, Str*)
-PTRLST_IMPL(rule_lst, Rule*)
-PTRLST_IMPL(pattern_lst, Pattern*)
-PTRLST_IMPL(pat_elem_lst, PatElem*)
+#include "utils.h"
 
 static Pstate* create_parser(const char* fname) {
 

@@ -3,6 +3,7 @@
 
 #include "utils.h"
 #include "memory.h"
+#include "errors.h"
 
 PTRLST_IMPL(str_lst, Str*)
 PTRLST_IMPL(rule_lst, Rule*)
@@ -19,5 +20,23 @@ bool str_in_lst(str_lst_t* lst, const char* str) {
     }
 
     return false;
+}
+
+Str* header_name(Str* name) {
+
+    Str* tmp = copy_str(name);
+    if(tmp->len == 0)
+        FATAL("header file name does not exist");
+    cat_str_str(tmp, ".h");
+    return tmp;
+}
+
+Str* source_name(Str* name) {
+
+    Str* tmp = copy_str(name);
+    if(tmp->len == 0)
+        FATAL("source file name does not exist");
+    cat_str_str(tmp, ".c");
+    return tmp;
 }
 

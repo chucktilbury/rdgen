@@ -15,6 +15,8 @@ PTRLST_HEADER(pattern_lst, Pattern*)
 PTRLST_HEADER(pat_elem_lst, PatElem*)
 
 bool str_in_lst(str_lst_t* lst, const char* str);
+Str* header_name(Str* name);
+Str* source_name(Str* name);
 
 #include "parser.h"
 

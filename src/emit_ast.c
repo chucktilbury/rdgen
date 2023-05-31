@@ -60,8 +60,11 @@ static void emit_data_structures() {
 
 static void ast_header() {
 
-    Str* tmp = create_str(state->ast_name->buffer);
-    cat_str_str(tmp, ".h");
+    Str* tmp = header_name(state->ast_name);
+    // create_str(state->ast_name->buffer);
+    // if(tmp->len == 0)
+    //     tmp = create_str("ast");
+    // cat_str_str(tmp, ".h");
 
     open_outfile(tmp);
 

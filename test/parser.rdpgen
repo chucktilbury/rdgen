@@ -1,4 +1,5 @@
-%ast_name "ast"
+%ast_name "simple_ast"
+%parser_name "simple_parser"
 
 %parser_code {
 

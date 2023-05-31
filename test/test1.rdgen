@@ -23,8 +23,8 @@
     // ast header code
 }
 
-%parser_name "parser"
-%ast_name "ast"
+%parser_name "simple_parser"
+%ast_name "simple_ast"
 
 module: module_item_list {}
 

@@ -1,85 +1,195 @@
 
-#include <ctype.h>
-#include <errno.h>
-#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
+#include <errno.h>
 
-#include "errors.h"
+#include "fileio.h"
 #include "memory.h"
 
-static FILE* fp;
-static const char* fname;
-static int line_no = 1;
-static int col_no  = 1;
-static const char* buffer;
-static int bidx = 0;
+struct _file_ptr_ {
+    FILE* fp;
+    const char* fname;
+    int line_no;
+    int col_no;
+    int ch;
+    int errors;
+    int warnings;
+    struct _file_ptr_* next;
+};
 
-#define CHAR buffer[bidx]
+struct _file_stack_ {
+    FPTR root;
+    int size;
+    int errors;
+    int warnings;
+};
 
-void read_file(const char* fname) {
+#define CONVERT(p)      ((struct _file_ptr_*)(p))
+#define MKLOCAL(n, p)   struct _file_ptr_*(n)=CONVERT(p)
+#define RETURN_PTR(p)   return (FPTR)(p)
 
-    if(fname == NULL)
-        FATAL("file name is required");
+FSTK create_file_stk(const char* fname) {
 
-    fp = fopen(fname, "r");
-    if(fp == NULL)
-        FATAL("cannot open input file: \"%s\": %s", fname, strerror(errno));
-
-    fseek(fp, 0L, SEEK_END);
-    size_t len = ftell(fp);
-    rewind(fp);
-
-    buffer = _alloc(len + sizeof(int));
-    memset((void*)buffer, 0xFF, len + sizeof(int));
-    fread((void*)buffer, sizeof(char), len, fp);
-
-    fclose(fp);
-
-    fname = _dup_str(fname);
-}
-
-int consume_char() {
-
-    bidx++;
-    if(CHAR == '\n') {
-        line_no++;
-        col_no = 1;
+    struct _file_stack_* ptr = _alloc_obj(struct _file_stack_);
+    if(fname != NULL) {
+        ptr->root = open_input_file(ptr, fname);
+        ptr->size = 1;
     }
-    else if(CHAR < 0x7F)
-        col_no++;
 
-    return CHAR;
+    return (FSTK)ptr;
 }
 
-int consume_space() {
+static int close_fstk(struct _file_stack_* stk) {
 
-    while(true) {
-        if(!isspace(CHAR) || CHAR > 0x7F)
-            break;
+    /* printf(">> close: %d: %d\n",
+        ((struct _file_ptr_*)stk->root)->line_no,
+        ((struct _file_ptr_*)stk->root)->col_no); */
+    FPTR fptr = ((struct _file_ptr_*)(stk->root))->next;
+    close_file(stk->root);
+    stk->root = fptr;
+    return consume_char((FSTK)stk);
+}
+
+int consume_char(FSTK ptr) {
+
+    struct _file_stack_* fs = (struct _file_stack_*)ptr;
+    if(fs->root) {
+        int ch = _consume_char(fs->root);
+        if(ch == EOF)
+            return close_fstk(fs);
         else
-            consume_char();
+            return ch;
+    }
+    else
+        return -1;
+}
+
+int get_char(FSTK ptr) {
+
+    struct _file_stack_* fs = (struct _file_stack_*)ptr;
+    if(fs->root)
+        return _get_char(fs->root);
+    else
+        return -1;
+}
+
+FPTR open_input_file(FSTK stk, const char* fname) {
+
+    struct _file_ptr_* ptr = _alloc_obj(struct _file_ptr_);
+    ptr->fp = fopen(fname, "r");
+    if(ptr->fp == NULL) {
+        fprintf(stderr, "fatal error: cannot open input file: %s: %s\n", fname, strerror(errno));
+        exit(1);
+    }
+    ptr->fname = _dup_str(fname);
+    ptr->line_no = 1;
+    ptr->col_no = 1;
+    ptr->next = NULL;
+    ptr->ch = fgetc(ptr->fp);
+
+    if(stk) {
+        struct _file_stack_* fs = (struct _file_stack_*)stk;
+        if(fs->root != NULL)
+            ptr->next = fs->root;
+        fs->root = ptr;
+        fs->size++;
     }
 
-    return CHAR;
+    RETURN_PTR(ptr);
 }
 
-int get_char() {
+int _consume_char(FPTR ptr) {
 
-    return CHAR;
+    MKLOCAL(p, ptr);
+
+    p->ch = fgetc(p->fp);
+    if(p->ch == '\n') {
+        p->line_no++;
+        p->col_no = 1;
+    }
+    else
+        p->col_no++;
+
+    return p->ch;
 }
 
-int get_line() {
+int _get_char(FPTR ptr) {
 
-    return line_no;
+    MKLOCAL(p, ptr);
+    return p->ch;
 }
 
-int get_col() {
+FPTR open_output_file(const char* fname) {
 
-    return col_no;
+    struct _file_ptr_*ptr = _alloc_obj(struct _file_ptr_);
+    ptr->fp = fopen(fname, "w");
+    if(ptr->fp == NULL) {
+        fprintf(stderr, "fatal error: cannot open input file: %s: %s\n", fname, strerror(errno));
+        exit(1);
+    }
+    ptr->fname = _dup_str(fname);
+    ptr->line_no = 1;
+    ptr->col_no = 1;
+    ptr->next = NULL;
+
+    RETURN_PTR(ptr);
 }
 
-const char* get_name() {
+void emit_char(FPTR ptr, int ch) {
 
-    return fname;
+    MKLOCAL(p, ptr);
+
+    if(ch == '\n') {
+        p->line_no++;
+        p->col_no = 1;
+    }
+    else
+        p->col_no++;
+
+    fputc(ch, p->fp);
 }
+
+void emit_buf(FPTR ptr, const char* str) {
+
+    for(char* s = (char*)str; *s != '\0'; s++)
+        emit_char(ptr, *s);
+}
+
+void emit_fmt(FPTR ptr, const char* fmt, ...) {
+
+    va_list args;
+    int len;
+
+    va_start(args, fmt);
+    len = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+
+    char* str = _alloc(len+sizeof(int));
+
+    va_start(args, fmt);
+    vsnprintf(str, len+1, fmt, args);
+    va_end(args);
+
+    emit_buf(ptr, str);
+    _free(str);
+}
+
+void emit_str(FPTR ptr, Str* str) {
+
+    emit_buf(ptr, raw_str(str));
+}
+
+void close_file(FPTR ptr) {
+
+    if(ptr) {
+        MKLOCAL(p, ptr);
+        if(p->fname)
+            _free(p->fname);
+        if(p->fp)
+            fclose(p->fp);
+        _free(p);
+    }
+}
+

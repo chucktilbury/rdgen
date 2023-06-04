@@ -1,27 +1,39 @@
+/**
+ * @file strs.h
+ *
+ * @brief Routines to manipulate strings as an object, rather than as a raw
+ * string in C. The string object is accessed through an opaque handle.
+ *
+ */
 #ifndef _STRS_H
 #define _STRS_H
 
-#include <stddef.h>
+#include <stddef.h> // for size_t type
 
-typedef struct {
-    char* buffer;
-    size_t len;
-    size_t cap;
-} Str;
+/**
+ * @brief Opaque handle for string object.
+ *
+ */
+typedef char* STR;
 
-Str* create_str(const char* str);
-Str* create_str_fmt(const char* fmt, ...);
-int cat_str_char(Str* ptr, int ch);
-int cat_str_str(Str* ptr, const char* str);
-Str* dup_str(Str* ptr);
-Str* strip_str(Str* str);
-int truncate_str(Str* str, int idx);
-int find_str(Str* str, const char* s);
-void clear_str(Str* str);
-int comp_str(Str* base, const char* str);
-Str* clip_str(Str* base, int start, int end);
-void upcase_str(Str* str);
-void downcase_str(Str* str);
-Str* copy_str(Str* str);
+/**
+ * @brief Public interface.
+ */
+STR create_str(const char* str);
+STR create_str_fmt(const char* fmt, ...);
+int cat_str_char(STR h, int ch);
+int cat_str_str(STR h, const char* str);
+int cat_str_fmt(STR h, const char* fmt, ...);
+STR strip_str(STR h);
+int truncate_str(STR h, int idx);
+int find_str(STR h, const char* s);
+void clear_str(STR h);
+int comp_str(STR h, const char* str);
+STR clip_str(STR h, int start, int end);
+void upcase_str(STR h);
+void downcase_str(STR h);
+STR copy_str(STR h);
+const char* raw_str(STR h);
+size_t len_str(STR h);
 
 #endif

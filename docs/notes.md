@@ -1,4 +1,11 @@
 
+# Random thoughts
+* Change some of the data structures to linked lists instead of arrays of voids.
+* Make prefix for files and output symbols
+* Remove aname and pname.
+* Add pre and post code for parser.
+* Remove separate pre code for AST and parser. (needs adjustment)
+
 # Thinking about parser generators
 
 A state machine can be constructed by identifying the state changes. A state change is where one token can follow another. This requires the driver to trace through every possible parse of the grammar. If there is a duplicate parse, then that is a parser conflict. Every possible point at which a parse makes a decision is a state. Conflicts are resolved by ordering the rules.

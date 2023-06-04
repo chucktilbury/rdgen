@@ -20,6 +20,6 @@ The translation happens in several passes and a lot of functions are created.
 - Error conditions are identified and stored in the data structure. (i.e. expected x but got y)
 - The C code is emitted in 2 modules, the parser and the AST.
 
-## Build dependencies
+## Build package dependencies
 - graphiz-dev
 - libgc-dev

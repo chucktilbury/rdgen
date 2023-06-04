@@ -19,3 +19,4 @@ if [ -z "$_PROJECT_NAME" ]; then
 else
     echo "Project is already initialized. If this is an error, then restart the shell."
 fi
+

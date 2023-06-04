@@ -7,6 +7,19 @@ source $HOME/.bashrc
 export _PROJECT_NAME=rdgen
 export _PROJECT_LOC=$HOME/Src/$_PROJECT_NAME
 
+function status { git status; }
+function add { git add .; }
+function commit { git commit; }
+function ac {
+    if [ -z ${_PROJECT_LOC} ]; then
+        echo "error: Project directory is not found."
+    else
+        cd $_PROJECT_LOC
+        add
+        commit
+    fi
+}
+
 ## Set the cross compiler target name, should match the directory of the
 ## cross compiler.
 #export _CROSS_TARGET=i686-elf

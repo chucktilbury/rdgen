@@ -12,12 +12,14 @@ function status {
     git status
 }
 function add {
+    old_dir=$PWD
     if [ -z ${_PROJECT_LOC} ]; then
         echo "error: Project directory is not found."
     else
         cd $_PROJECT_LOC
         git add .
     fi
+    cd $old_dir
 }
 function commit {
     git commit
@@ -26,12 +28,18 @@ function push {
     git push
 }
 function all {
+    old_dir=$PWD
     if [ -z ${_PROJECT_LOC} ]; then
         echo "error: Project directory is not found."
     else
         cd $_PROJECT_LOC
         git add . && git commit && git push
     fi
+    cd $old_dir
+}
+
+function db {
+    kdbg
 }
 
 ## Set the cross compiler target name, should match the directory of the

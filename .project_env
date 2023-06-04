@@ -7,16 +7,25 @@ source $HOME/.bashrc
 export _PROJECT_NAME=rdgen
 export _PROJECT_LOC=$HOME/Src/$_PROJECT_NAME
 
-function status { git status; }
-function add { git add .; }
-function commit { git commit; }
-function ac {
+# make some GIT shortcuts
+function status {
+    git status
+}
+function add {
+    return git add .
+}
+function commit {
+    return git commit
+}
+function push {
+    return git push
+}
+function all {
     if [ -z ${_PROJECT_LOC} ]; then
         echo "error: Project directory is not found."
     else
         cd $_PROJECT_LOC
-        add
-        commit
+        git add . && git commit && git push
     fi
 }
 

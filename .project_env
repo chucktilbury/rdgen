@@ -12,13 +12,18 @@ function status {
     git status
 }
 function add {
-    return git add .
+    if [ -z ${_PROJECT_LOC} ]; then
+        echo "error: Project directory is not found."
+    else
+        cd $_PROJECT_LOC
+        git add .
+    fi
 }
 function commit {
-    return git commit
+    git commit
 }
 function push {
-    return git push
+    git push
 }
 function all {
     if [ -z ${_PROJECT_LOC} ]; then

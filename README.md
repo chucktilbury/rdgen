@@ -21,5 +21,6 @@ The translation happens in several passes and a lot of functions are created.
 - The C code is emitted in 2 modules, the parser and the AST.
 
 ## Build package dependencies
-- graphiz-dev
-- libgc-dev
+- graphiz (for doxygen)
+- graphiz-dev (to generate syntax bubbles)
+- libgc-dev (garbage collection)

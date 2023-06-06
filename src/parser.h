@@ -3,24 +3,25 @@
 
 #include <stdbool.h>
 
+#include "fileio.h"
 #include "parser.h"
 #include "ptrlst.h"
 #include "strs.h"
 #include "utils.h"
 
 struct pat_elem_t {
-    Str* str;
+    STR str;
     bool is_terminal;
 };
 
 struct pattern_t {
-    //str_lst_t* lst;
+    // str_lst_t* lst;
     pat_elem_lst_t* elems;
-    Str* code; // C code to run upon a pattern match
+    STR code; // C code to run upon a pattern match
 };
 
 struct rule_t {
-    Str* name;
+    STR name;
     bool is_recursive;
     bool has_nonterms;
     pattern_lst_t* patterns;
@@ -32,8 +33,8 @@ typedef struct {
     int verbo;
 
     // raw names of output files as given by directives
-    Str* ast_name;
-    Str* parser_name;
+    STR ast_name;
+    STR parser_name;
 
     // string lists that will be copied as source code to the output,
     // as given by directives

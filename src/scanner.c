@@ -34,6 +34,13 @@ static void check_eof(const char* fmt, ...) {
     }
 }
 
+static void consume_space() {
+
+    int ch = get_char();
+    while(isspace(ch))
+        ch = consume_char();
+}
+
 static void consume_comment() {
 
     int ch = consume_char();
@@ -52,27 +59,27 @@ static void get_directive() {
     while(IS_SYMBOL(ch)) {
         cat_str_char(_tok.str, ch);
         ch = consume_char();
-        // TEST_EOF("invalid directive: %s", _tok.str->buffer);
-        check_eof("invalid directive: %s", _tok.str->buffer);
+        // TEST_EOF("invalid directive: %s", raw_str(_tok.str));
+        check_eof("invalid directive: %s", raw_str(_tok.str));
     }
 
-    if(!strcmp(_tok.str->buffer, "%verbosity"))
+    if(!strcmp(raw_str(_tok.str), "%verbosity"))
         _tok.type = VERBOSITY;
-    else if(!strcmp(_tok.str->buffer, "%ast_name"))
+    else if(!strcmp(raw_str(_tok.str), "%ast_name"))
         _tok.type = AST_NAME;
-    else if(!strcmp(_tok.str->buffer, "%parser_name"))
+    else if(!strcmp(raw_str(_tok.str), "%parser_name"))
         _tok.type = PARSER_NAME;
-    else if(!strcmp(_tok.str->buffer, "%ast_code"))
+    else if(!strcmp(raw_str(_tok.str), "%ast_code"))
         _tok.type = AST_CODE;
-    else if(!strcmp(_tok.str->buffer, "%parser_code"))
+    else if(!strcmp(raw_str(_tok.str), "%parser_code"))
         _tok.type = PARSER_CODE;
-    else if(!strcmp(_tok.str->buffer, "%ast_header"))
+    else if(!strcmp(raw_str(_tok.str), "%ast_header"))
         _tok.type = AST_HEADER;
-    else if(!strcmp(_tok.str->buffer, "%parser_header"))
+    else if(!strcmp(raw_str(_tok.str), "%parser_header"))
         _tok.type = PARSER_HEADER;
     else {
         _tok.type = ERROR;
-        syntax("unknown directive: %s", _tok.str->buffer);
+        syntax("unknown directive: %s", raw_str(_tok.str));
     }
 }
 
@@ -154,7 +161,7 @@ TokenType get_token(Token* tok) {
 
     if(tok != NULL) {
         tok->type = _tok.type;
-        tok->str  = create_str(_tok.str->buffer);
+        tok->str  = copy_str(_tok.str);
     }
     return _tok.type;
 }
@@ -206,8 +213,10 @@ TokenType consume_token(Token* tok) {
     }
 
     if(tok != NULL) {
-        tok->str  = create_str(_tok.str->buffer);
+        tok->str  = copy_str(_tok.str);
         tok->type = _tok.type;
+        tok->line = get_line_no();
+        tok->col  = get_col_no();
     }
 
     return _tok.type;

@@ -11,6 +11,7 @@ export _PROJECT_LOC=$HOME/Src/$_PROJECT_NAME
 function status {
     git status
 }
+
 function add {
     old_dir=$PWD
     if [ -z ${_PROJECT_LOC} ]; then
@@ -21,12 +22,15 @@ function add {
     fi
     cd $old_dir
 }
+
 function commit {
     git commit
 }
+
 function push {
     git push
 }
+
 function all {
     old_dir=$PWD
     if [ -z ${_PROJECT_LOC} ]; then
@@ -38,8 +42,18 @@ function all {
     cd $old_dir
 }
 
-function db {
-    kdbg
+function dbg {
+    if [ $# -eq 0 ]; then
+        echo "error: executable name is required"
+    elif [ $# -eq 1 ]; then
+        echo "$1"
+        kdbg $1
+    elif [ $# -gt 1 ]; then
+        args=("$@")
+        name=${args[0]}
+        unset args[0]
+        kdbg -a "${args[*]}" $name 2> /dev/null &
+    fi
 }
 
 ## Set the cross compiler target name, should match the directory of the

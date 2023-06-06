@@ -11,7 +11,7 @@ void syntax(const char* fmt, ...) {
 
     va_list args;
 
-    fprintf(stderr, "syntax error: %d: %d: ", get_line(), get_col());
+    fprintf(stderr, "syntax error: %s: %d: %d: ", get_fname(), get_line_no(), get_col_no());
 
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);

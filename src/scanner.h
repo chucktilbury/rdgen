@@ -22,7 +22,9 @@ typedef enum {
 
 typedef struct {
     TokenType type;
-    Str* str;
+    STR str;
+    int line;
+    int col;
 } Token;
 
 TokenType get_token(Token* tok);

@@ -7,10 +7,10 @@
  * memory interface module and also supports GC.
  *
  */
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
 #include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "list.h"
 #include "memory.h"
@@ -37,16 +37,20 @@ struct _list_ {
     LST_ELEM* crnt;
 };
 
-#define CAST_LST(p)         ((struct _list_*)(p))
-#define VOID_TO_ELEM(p)     ((LST_ELEM*)(((unsigned long)p)-sizeof(LST_ELEM)))
-#define ELEM_TO_VOID(p)     ((void*)(((unsigned long)p)+sizeof(LST_ELEM)))
+#define CAST_LST(p) ((struct _list_*)(p))
+#define VOID_TO_ELEM(p) ((LST_ELEM*)(((unsigned long)p) - sizeof(LST_ELEM)))
+#define ELEM_TO_VOID(p) ((void*)(((unsigned long)p) + sizeof(LST_ELEM)))
 
-#define RETURN_LST(p)       return (LST)(p);
+#define RETURN_LST(p) return (LST)(p);
 
-#define NOTNULL(p)          assert((p)!=NULL)
-#define LOCAL(t, n, p)      t*n=(t*)p
-#define LOCAL_LST(n, p)     NOTNULL(p);LOCAL(struct _list_, n, p)
-#define LOCAL_ELEM(n, p)    NOTNULL(p);LST_ELEM* n = VOID_TO_ELEM(p)
+#define NOTNULL(p) assert((p) != NULL)
+#define LOCAL(t, n, p) t* n = (t*)p
+#define LOCAL_LST(n, p) \
+    NOTNULL(p);         \
+    LOCAL(struct _list_, n, p)
+#define LOCAL_ELEM(n, p) \
+    NOTNULL(p);          \
+    LST_ELEM* n = VOID_TO_ELEM(p)
 
 /**
  * @brief Create a list object
@@ -89,9 +93,9 @@ void destroy_lst(LST lst) {
 static LST_ELEM* create_elem(void* data, size_t size, int type) {
 
     NOTNULL(data);
-    LST_ELEM* elem = _alloc(sizeof(LST_ELEM)+size);
-    elem->size = size;
-    elem->type = type;
+    LST_ELEM* elem = _alloc(sizeof(LST_ELEM) + size);
+    elem->size     = size;
+    elem->type     = type;
     memcpy(ELEM_TO_VOID(elem), data, size);
 
     // note that _alloc_obj() clears the memory.
@@ -113,12 +117,12 @@ void append_lst(LST lst, void* data, size_t size, int type) {
     LST_ELEM* elem = create_elem(data, size, type);
 
     if(l->last != NULL) {
-        elem->prev = l->last;
+        elem->prev    = l->last;
         l->last->next = elem;
     }
     else {
         l->first = elem;
-        l->crnt = elem;
+        l->crnt  = elem;
     }
 
     l->last = elem;
@@ -139,7 +143,7 @@ void prepend_lst(LST lst, void* data, size_t size, int type) {
     LST_ELEM* elem = create_elem(data, size, type);
 
     if(l->first != NULL) {
-        elem->next = l->first;
+        elem->next     = l->first;
         l->first->prev = elem;
     }
     else {
@@ -196,8 +200,8 @@ void insert_lst(LST lst, void* elem, void* ptr, size_t size, int type, bool flag
     }
 
     LST_ELEM* nele = create_elem(ptr, size, type);
-    nele->next = next;
-    nele->prev = prev;
+    nele->next     = next;
+    nele->prev     = prev;
 
     next->prev = nele;
     prev->next = nele;
@@ -306,27 +310,27 @@ void remove_lst(LST lst, void* elem) {
 
     // first in a not-empty list
     if(e->prev == NULL && e->next != NULL) {
-        l->first = e->next;
+        l->first       = e->next;
         l->first->prev = NULL;
     }
     // last in a not-empty list
     else if(e->next == NULL && e->prev != NULL) {
-        l->last = e->prev;
+        l->last       = e->prev;
         l->last->next = NULL;
     }
     // only element in the list
     else if(e->next == NULL && e->prev == NULL) {
         l->first = NULL;
-        l->last = NULL;
-        l->crnt = NULL;
+        l->last  = NULL;
+        l->crnt  = NULL;
     }
     // not first or last in a non-empty list
     else {
         // clarity is king
         LST_ELEM* next = e->next;
         LST_ELEM* prev = e->prev;
-        next->prev = prev;
-        prev->next = next;
+        next->prev     = prev;
+        prev->next     = next;
     }
     free_elem(e);
 }
@@ -365,7 +369,7 @@ void pop_lst(LST lst) {
 
     LOCAL_LST(l, lst);
     LST_ELEM* tmp = l->first;
-    l->first = l->first->next;
+    l->first      = l->first->next;
     if(l->first != NULL)
         l->first->prev = NULL;
     else {
@@ -420,19 +424,19 @@ void* iterate_lst(LST lst) {
 
 typedef LST int_lst_t;
 
-#define create()    LST lst = create_lst()
-#define destroy()   destroy_lst(lst)
+#define create() LST lst = create_lst()
+#define destroy() destroy_lst(lst)
 
-#define insert(i, f)    insert_lst_idx(lst, i, &val, sizeof(int), 124, f)
-#define remove(i)   remove_lst_idx(lst, i)
-#define push()      push_lst(lst, &val, sizeof(int), 123)
-#define pop()       pop_lst(lst)
-#define peek()      peek_lst(lst)
+#define insert(i, f) insert_lst_idx(lst, i, &val, sizeof(int), 124, f)
+#define remove(i) remove_lst_idx(lst, i)
+#define push() push_lst(lst, &val, sizeof(int), 123)
+#define pop() pop_lst(lst)
+#define peek() peek_lst(lst)
 
-#define reset()     reset_lst(lst)
-#define iterate()   iterate_lst(lst)
+#define reset() reset_lst(lst)
+#define iterate() iterate_lst(lst)
 
-#define show()  show_list(lst)
+#define show() show_list(lst)
 
 void show_list(LST lst) {
 
@@ -496,4 +500,3 @@ int main() {
 }
 
 #endif
-

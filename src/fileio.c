@@ -1,195 +1,188 @@
 
+#include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
-#include <errno.h>
 
+#include "errors.h"
 #include "fileio.h"
 #include "memory.h"
+#include "strs.h"
 
 struct _file_ptr_ {
     FILE* fp;
-    const char* fname;
+    STR fname;
     int line_no;
     int col_no;
     int ch;
-    int errors;
-    int warnings;
     struct _file_ptr_* next;
 };
 
-struct _file_stack_ {
-    FPTR root;
-    int size;
-    int errors;
-    int warnings;
-};
+static struct _file_ptr_* file_stack = NULL;
 
-#define CONVERT(p)      ((struct _file_ptr_*)(p))
-#define MKLOCAL(n, p)   struct _file_ptr_*(n)=CONVERT(p)
-#define RETURN_PTR(p)   return (FPTR)(p)
-
-FSTK create_file_stk(const char* fname) {
-
-    struct _file_stack_* ptr = _alloc_obj(struct _file_stack_);
-    if(fname != NULL) {
-        ptr->root = open_input_file(ptr, fname);
-        ptr->size = 1;
-    }
-
-    return (FSTK)ptr;
-}
-
-static int close_fstk(struct _file_stack_* stk) {
-
-    /* printf(">> close: %d: %d\n",
-        ((struct _file_ptr_*)stk->root)->line_no,
-        ((struct _file_ptr_*)stk->root)->col_no); */
-    FPTR fptr = ((struct _file_ptr_*)(stk->root))->next;
-    close_file(stk->root);
-    stk->root = fptr;
-    return consume_char((FSTK)stk);
-}
-
-int consume_char(FSTK ptr) {
-
-    struct _file_stack_* fs = (struct _file_stack_*)ptr;
-    if(fs->root) {
-        int ch = _consume_char(fs->root);
-        if(ch == EOF)
-            return close_fstk(fs);
-        else
-            return ch;
-    }
-    else
-        return -1;
-}
-
-int get_char(FSTK ptr) {
-
-    struct _file_stack_* fs = (struct _file_stack_*)ptr;
-    if(fs->root)
-        return _get_char(fs->root);
-    else
-        return -1;
-}
-
-FPTR open_input_file(FSTK stk, const char* fname) {
+/**
+ * @brief Open an input file and push it on the stack.
+ *
+ * @param fname
+ */
+void open_input_file(const char* fname) {
 
     struct _file_ptr_* ptr = _alloc_obj(struct _file_ptr_);
-    ptr->fp = fopen(fname, "r");
-    if(ptr->fp == NULL) {
-        fprintf(stderr, "fatal error: cannot open input file: %s: %s\n", fname, strerror(errno));
-        exit(1);
-    }
-    ptr->fname = _dup_str(fname);
+    ptr->fp                = fopen(fname, "r");
+    if(ptr->fp == NULL)
+        fatal("cannot open input file: %s: %s\n", fname, strerror(errno));
+
+    ptr->fname   = create_str(fname);
     ptr->line_no = 1;
-    ptr->col_no = 1;
-    ptr->next = NULL;
-    ptr->ch = fgetc(ptr->fp);
+    ptr->col_no  = 1;
+    ptr->next    = NULL;
+    ptr->ch      = fgetc(ptr->fp);
 
-    if(stk) {
-        struct _file_stack_* fs = (struct _file_stack_*)stk;
-        if(fs->root != NULL)
-            ptr->next = fs->root;
-        fs->root = ptr;
-        fs->size++;
-    }
-
-    RETURN_PTR(ptr);
+    if(file_stack != NULL)
+        ptr->next = file_stack;
+    file_stack = ptr;
 }
 
-int _consume_char(FPTR ptr) {
+/**
+ * @brief Close an input file and pop it off of the stack.
+ *
+ */
+static void close_input_file() {
 
-    MKLOCAL(p, ptr);
+    if(file_stack != NULL) {
+        fclose(file_stack->fp);
+        struct _file_ptr_* tmp = file_stack;
+        file_stack             = tmp->next;
+        destroy_str(tmp->fname);
+        _free(tmp);
+    }
+}
 
-    p->ch = fgetc(p->fp);
-    if(p->ch == '\n') {
-        p->line_no++;
-        p->col_no = 1;
+/**
+ * @brief Return the current char or EOF if there is no more input.
+ *
+ * @return int
+ */
+int get_char() {
+
+    if(file_stack != NULL)
+        return file_stack->ch;
+    else
+        return EOF;
+}
+
+/**
+ * @brief Consume a character from the input stream. If the file ends, then
+ * try to close it.
+ *
+ * @return int
+ */
+int consume_char() {
+
+    if(file_stack != NULL) {
+        file_stack->ch = fgetc(file_stack->fp);
+        if(file_stack->ch == '\n') {
+            file_stack->line_no++;
+            file_stack->col_no = 1;
+        }
+        else if(file_stack->ch == EOF) {
+            close_input_file();
+            // return the current character from the previous file.
+            return get_char();
+        }
+        else
+            file_stack->col_no++;
+
+        return file_stack->ch;
     }
     else
-        p->col_no++;
-
-    return p->ch;
+        return EOF;
 }
 
-int _get_char(FPTR ptr) {
+/**
+ * @brief Return the line number of the current file. Returns -1 if there
+ * is not currently open file.
+ *
+ * @return int
+ */
+int get_line_no() {
 
-    MKLOCAL(p, ptr);
-    return p->ch;
+    if(file_stack != NULL)
+        return file_stack->line_no;
+    else
+        return -1;
+}
+
+/**
+ * @brief Return the column number of the current file or -1 if there is
+ * no file currently open.
+ *
+ * @return int
+ */
+int get_col_no() {
+
+    if(file_stack != NULL)
+        return file_stack->col_no;
+    else
+        return -1;
+}
+
+/**
+ * @brief Return the current file name as it was opened.
+ *
+ * @return STR
+ */
+const char* get_fname() {
+
+    if(file_stack != NULL)
+        return raw_str(file_stack->fname);
+    else
+        return NULL;
 }
 
 FPTR open_output_file(const char* fname) {
 
-    struct _file_ptr_*ptr = _alloc_obj(struct _file_ptr_);
-    ptr->fp = fopen(fname, "w");
-    if(ptr->fp == NULL) {
-        fprintf(stderr, "fatal error: cannot open input file: %s: %s\n", fname, strerror(errno));
-        exit(1);
-    }
-    ptr->fname = _dup_str(fname);
+    struct _file_ptr_* ptr = _alloc_obj(struct _file_ptr_);
+    ptr->fp                = fopen(fname, "w");
+    if(ptr->fp == NULL)
+        fatal("cannot open output file: %s: %s\n", fname, strerror(errno));
+
+    ptr->fname   = create_str(fname);
     ptr->line_no = 1;
-    ptr->col_no = 1;
-    ptr->next = NULL;
+    ptr->col_no  = 1;
+    ptr->next    = NULL;
+    ptr->ch      = 0;
 
-    RETURN_PTR(ptr);
+    return (FPTR)ptr;
 }
 
-void emit_char(FPTR ptr, int ch) {
+void close_output_file(FPTR fp) {
 
-    MKLOCAL(p, ptr);
-
-    if(ch == '\n') {
-        p->line_no++;
-        p->col_no = 1;
-    }
-    else
-        p->col_no++;
-
-    fputc(ch, p->fp);
+    struct _file_ptr_* ptr = (struct _file_ptr_*)fp;
+    fclose(ptr->fp);
+    destroy_str(ptr->fname);
+    _free(fp);
 }
 
-void emit_buf(FPTR ptr, const char* str) {
+void emit_buf(FPTR h, const char* str) {
 
-    for(char* s = (char*)str; *s != '\0'; s++)
-        emit_char(ptr, *s);
+    struct _file_ptr_* ptr = (struct _file_ptr_*)h;
+    fprintf(ptr->fp, "%s", str);
 }
 
-void emit_fmt(FPTR ptr, const char* fmt, ...) {
+void emit_fmt(FPTR h, const char* fmt, ...) {
 
+    struct _file_ptr_* ptr = (struct _file_ptr_*)h;
     va_list args;
-    int len;
 
     va_start(args, fmt);
-    len = vsnprintf(NULL, 0, fmt, args);
+    vfprintf(ptr->fp, fmt, args);
     va_end(args);
-
-    char* str = _alloc(len+sizeof(int));
-
-    va_start(args, fmt);
-    vsnprintf(str, len+1, fmt, args);
-    va_end(args);
-
-    emit_buf(ptr, str);
-    _free(str);
 }
 
-void emit_str(FPTR ptr, Str* str) {
+void emit_str(FPTR h, STR str) {
 
-    emit_buf(ptr, raw_str(str));
+    struct _file_ptr_* ptr = (struct _file_ptr_*)h;
+    fprintf(ptr->fp, "%s", raw_str(str));
 }
-
-void close_file(FPTR ptr) {
-
-    if(ptr) {
-        MKLOCAL(p, ptr);
-        if(p->fname)
-            _free(p->fname);
-        if(p->fp)
-            fclose(p->fp);
-        _free(p);
-    }
-}
-

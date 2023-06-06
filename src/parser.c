@@ -12,7 +12,9 @@ static Pstate* create_parser(const char* fname) {
 
     Pstate* state = _alloc_obj(Pstate);
 
-    read_file(fname);
+    // read_file(fname);
+    open_input_file(fname);
+
     consume_token(NULL); // prime the pipeline.
 
     state->finished      = false;
@@ -34,20 +36,20 @@ static Pattern* parse_pattern() {
 
     Token tok;
     Pattern* pat = _alloc_obj(Pattern);
-    pat->elems     = pat_elem_lst_create();
+    pat->elems   = pat_elem_lst_create();
 
     consume_token(&tok);
 
     while(tok.type == SYMBOL) {
-        PatElem* pe = _alloc_obj(PatElem);
-        pe->str = create_str(tok.str->buffer);
+        PatElem* pe     = _alloc_obj(PatElem);
+        pe->str         = copy_str(tok.str);
         pe->is_terminal = false;
         pat_elem_lst_add(pat->elems, pe);
         consume_token(&tok);
     }
 
     if(get_token(&tok) == BLOCK)
-        pat->code = create_str(tok.str->buffer);
+        pat->code = copy_str(tok.str);
     else
         syntax("expected a code block at the end of the pattern, but got %s", tok_to_str(tok.type));
 
@@ -66,7 +68,7 @@ static void parse_rule(Pstate* state) {
 
     Rule* rule     = _alloc_obj(Rule);
     rule->patterns = pattern_lst_create();
-    rule->name = create_str(tok.str->buffer);
+    rule->name     = copy_str(tok.str);
 
     while(consume_token(&tok) == COLON) {
         pattern_lst_add(rule->patterns, parse_pattern());
@@ -83,7 +85,7 @@ static void parse_verbo(Pstate* state) {
     if(type == NUMBER) {
         Token tok;
         get_token(&tok);
-        state->verbo = (int)strtol(tok.str->buffer, NULL, 10);
+        state->verbo = (int)strtol(raw_str(tok.str), NULL, 10);
     }
     else
         syntax("expected a number but got a %s", tok_to_str(type));
@@ -97,7 +99,7 @@ static void parse_ast_name(Pstate* state) {
     if(type == STRG) {
         Token tok;
         get_token(&tok);
-        state->ast_name = create_str(tok.str->buffer);
+        state->ast_name = copy_str(tok.str);
     }
     else
         syntax("expected a string but got a %s", tok_to_str(type));
@@ -111,7 +113,7 @@ static void parse_parser_name(Pstate* state) {
     if(type == STRG) {
         Token tok;
         get_token(&tok);
-        state->parser_name = create_str(tok.str->buffer);
+        state->parser_name = copy_str(tok.str);
     }
     else
         syntax("expected a string but got a %s", tok_to_str(type));
@@ -125,7 +127,7 @@ static void parse_ast_code(Pstate* state) {
     if(type == BLOCK) {
         Token tok;
         get_token(&tok);
-        str_lst_add(state->ast_source, create_str(tok.str->buffer));
+        str_lst_add(state->ast_source, copy_str(tok.str));
     }
     else
         syntax("expected a code block but got a %s", tok_to_str(type));
@@ -139,7 +141,7 @@ static void parse_parser_code(Pstate* state) {
     if(type == BLOCK) {
         Token tok;
         get_token(&tok);
-        str_lst_add(state->parser_source, create_str(tok.str->buffer));
+        str_lst_add(state->parser_source, copy_str(tok.str));
     }
     else
         syntax("expected a code block but got a %s", tok_to_str(type));
@@ -153,7 +155,7 @@ static void parse_ast_header(Pstate* state) {
     if(type == BLOCK) {
         Token tok;
         get_token(&tok);
-        str_lst_add(state->ast_header, create_str(tok.str->buffer));
+        str_lst_add(state->ast_header, copy_str(tok.str));
     }
     else
         syntax("expected a code block but got a %s", tok_to_str(type));
@@ -167,7 +169,7 @@ static void parse_parser_header(Pstate* state) {
     if(type == BLOCK) {
         Token tok;
         get_token(&tok);
-        str_lst_add(state->parser_header, create_str(tok.str->buffer));
+        str_lst_add(state->parser_header, copy_str(tok.str));
     }
     else
         syntax("expected a code block but got a %s", tok_to_str(type));

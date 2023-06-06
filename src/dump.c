@@ -6,8 +6,8 @@ static void dump_str_lst(str_lst_t* lst, const char* label, int verbo) {
 
     if(verbo > 5) {
         printf("\n----- %s (%u) -----\n", label, lst->len);
-        FOR_LST(Str, item, str_lst, lst)
-            printf("%s\n", item->buffer);
+        FOR_LST(STR, item, str_lst, lst)
+        printf("%s\n", raw_str(item));
     }
 }
 
@@ -16,11 +16,11 @@ static void dump_rules(Pstate* state) {
     if(state->verbo > 3) {
         printf("----- rules (%u) -----\n\n", state->rules->len);
         FOR_LST(Rule, r, rule_lst, state->rules) {
-            printf("%s - recursive:%s\n", r->name->buffer, r->is_recursive ? "true" : "false");
+            printf("%s - recursive:%s\n", raw_str(r->name), r->is_recursive ? "true" : "false");
             FOR_LST(Pattern, p, pattern_lst, r->patterns) {
                 printf("\t: ");
                 FOR_LST(PatElem, pe, pat_elem_lst, p->elems) {
-                    printf("%s ", pe->str->buffer);
+                    printf("%s ", raw_str(pe->str));
                 }
                 printf("\n");
             }

@@ -3,22 +3,23 @@
 
 #include "strs.h"
 
+// The file stack for input files is implicitly defined.
+void open_input_file(const char* fname);
+int get_char();
+int consume_char();
+
+int get_line_no();
+int get_col_no();
+const char* get_fname();
+
+// Since multiple output files can be open in a moment, then it is accessed
+// using an opaque handle.
 typedef void* FPTR;
-typedef void* FSTK;
-
-FSTK create_file_stk(const char* fname);
-int consume_char(FSTK stk);
-int get_char(FSTK stk);
-
-FPTR open_input_file(FSTK stk, const char* fname);
-int _consume_char(FPTR fp);
-int _get_char(FPTR fp);
-
 FPTR open_output_file(const char* fname);
-void emit_buf(FPTR fp, const char* str);
-void emit_fmt(FPTR fp, const char* fmt, ...);
-void emit_str(FPTR fp, Str* str);
-
 void close_file(FPTR fp);
+
+void emit_buf(FPTR h, const char* str);
+void emit_fmt(FPTR h, const char* fmt, ...);
+void emit_str(FPTR h, STR str);
 
 #endif /* _FILEIO_H */

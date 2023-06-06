@@ -1,17 +1,18 @@
 
-#include <stdio.h>
-#include <stdarg.h>
 #include <errno.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "emit.h"
-#include "preproc.h"
 #include "emit_ast.h"
 #include "emit_parser.h"
 #include "errors.h"
+#include "preproc.h"
 
 #define TESTING 0
 
+#if 0
 static FILE* fp = NULL;
 
 void open_outfile(Str* name) {
@@ -51,3 +52,4 @@ void emit(Pstate* state) {
         emit_parser(state);
     }
 }
+#endif

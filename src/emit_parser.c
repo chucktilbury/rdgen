@@ -1,8 +1,8 @@
 
 
-#include "utils.h"
-#include "emit.h"
 #include "emit_parser.h"
+#include "emit.h"
+#include "utils.h"
 
 static Pstate* state = NULL;
 
@@ -19,7 +19,7 @@ static void emit_header() {
     EMIT("#include \"%s\"\n\n", header_name(state->ast_name)->buffer);
     EMIT("typedef enum {\n");
     FOR_LST(Str, s, str_lst, state->terminals)
-        EMIT("  TOK_%s = %d,\n", s->buffer, count++);
+    EMIT("  TOK_%s = %d,\n", s->buffer, count++);
     EMIT("} TokenType;\n\n");
     EMIT("Ast* parser(cont char* name);\n\n");
     EMIT("#endif /* _%s_H */\n\n", tmp->buffer);
@@ -68,7 +68,7 @@ static Str* emit_rules() {
     EMIT("// function definitions\n");
 
     FOR_LST(Rule, rule, rule_lst, state->rules)
-        emit_single_rule(rule);
+    emit_single_rule(rule);
     return tmp;
 }
 
@@ -106,4 +106,3 @@ void emit_parser(Pstate* s) {
     emit_header();
     emit_source();
 }
-

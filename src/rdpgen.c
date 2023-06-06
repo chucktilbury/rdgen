@@ -13,14 +13,14 @@
  */
 int main(int argc, char** argv) {
 
-    Pstate* state = parse_input(argc > 1? argv[1]: NULL);
+    Pstate* state = parse_input(argc > 1 ? argv[1] : NULL);
 
     if(get_errors() == 0)
         pre_process(state);
 
     if(get_errors() == 0) {
-        emit(state);
-        //dump_state(state);
+        // emit(state);
+        dump_state(state);
     }
 
     fprintf(stdout, "errors: %d\n", get_errors());

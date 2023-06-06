@@ -1,10 +1,63 @@
+# RD Implementation
+All parsers are nothing more than a state machine. A parser generator creates a unique state machine for the specified grammar.
+* Every RD function has a 2 dim array defined.
+* The rows are the rule lines and the columns are the items in a line.
+* The array contains function pointers.
+* The arrays are defined in the functions as local vars.
+* Functions in the array return a data structure of a particular type.
+* If the parse that a function is intended to do fails, then it returns NULL.
+  * When a function returns NULL, then the error handler is invoked.
+  * The error handler accepts a pointer to the array and the current position. It generates the error based upon that information and does recovery.
+  * Support for a custom recovery routine is required. If there is no routine defined, then simply exit the parser gracefully.
+  * Do I want to place an "error" item in the AST data?
+  * Does the parse function return after the error handler? (yes, I think so)
+
+* When a rule ends it returns a "rule end" pointer so that the function knows to return its payload.
+* All state transitions are handled by individual functions that are defined for every terminal and non-terminal that was defined for the grammar.
+
+# AST building.
+The AST is built by the state machine as a result of parsing. Traversing the AST is accomplished with a different set of library routines.
+* Every AST node has pointers to other AST nodes.
+  * These nodes represent both terminal and non-terminal symbols.
+* When part of a rule is successfully parsed then an element is it's data structure is updated with a pointer to the the element that was parsed.
+
+Functions return an AST node and that node is stored in the tree. Nodes all have a list of nodes, so the routines that traverse the tree can discover the nodes and perform actions based upon the result. The actions associated with a rule row are executed when the AST is traversed.
+
+So maybe the rules do not need to be defined within a function if they contain function pointers. It is a reasonable assumption that any particular non-terminal will always be resolved in the same way, even if there are alternatives. Maybe a generic driver can be implemented that handles all aspects of AST generation based upon the tables.
+
+```c
+typedef void* (*array_func)();
+```
+* The void pointer returned is a pointer to an AST node that will be added to the current AST node list.
+* If the function returns NULL then the error handler is called to print and "expected but got" style error. The error handler does recovery and also causes the current function to return. Maybe an error token should be put into the AST.
+  * Note that a custom recovery routine is needed.
+* There is a special return value that indicates the end of the rule. This is not added to the AST node. Instead, it causes the rule handler to return its payload.
+
+There is a function defined for every single terminal and non-terminal that is defined in the grammar. That means that the arrays have to be defined in these functions and a generic driver is not possible. However, there is a lot of boilerplate that can be used. Even though this is wasteful from one perspective, it should work and is required.
+
+## UPSHOT:
+* Are the arrays defined in a rule-specific function? Or can there be a generic driver handle it? If the AST data structure only has a list of objects, then a generic driver could be used.
+  * Note that the individual functions are required to return the AST data structure, but a generic driver is also required to call the functions. (is that true?)
+* Need to do some research on how to properly implement multi-dim arrays. Do I need support routines?
+
 
 # Random thoughts
 * Change some of the data structures to linked lists instead of arrays of voids.
 * Make prefix for files and output symbols
 * Remove aname and pname.
-* Add pre and post code for parser.
-* Remove separate pre code for AST and parser. (needs adjustment)
+* There is no need to add code to the end of the parser. The code that traverses the AST is what needs to access any custom generic code and so custom code should be placed at the beginning of the traversal routines.
+* Code that is specified for rule rows is run when the AST is traversed, not when the parser completes a rule. Do I need code that runs when a rule is completed? I think things like checking symbols and other semantics should be done with AST passes.
+  * How much of that can be automated?
+* Implement Graphiz DOT file output to represent the parser bubble transitions for troubleshooting.
+
+
+
+----
+# Data below here is invalidated.
+----
+... and kept for historical reasons ...
+
+----
 
 # Thinking about parser generators
 

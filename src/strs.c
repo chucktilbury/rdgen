@@ -1,14 +1,18 @@
 /**
  * @file strs.c
  *
- * @brief Various routines used to manipulate C strings as an object.
+ * @brief Various routines used to manipulate C strings as an object. These
+ * strings are similar to strings in Pascal. The length is part of the string,
+ * however, the string itself is still zero terminated like a C string. A data
+ * structure is prepended to the string in order to track the memory allocated
+ * for it.
  *
  */
+#include <assert.h>
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
-#include <assert.h>
 
 #include "memory.h"
 #include "strs.h"
@@ -18,32 +22,28 @@
  *
  */
 struct _string_ {
+    char* buffer;
     size_t len;
     size_t cap;
-    // buffer is allocated behind this.
-    char buffer[0]; // this is specific to GCC...
 };
 
-#define NOT_NULL(p)     assert((p)!=NULL)
-#define LOCAL(n, p)     NOT_NULL(p);struct _string_*n = STR_TO_DS(p)
-#define DS_TO_STR(s)  ((char*)((unsigned long)(s))+sizeof(struct _string_))
-#define STR_TO_DS(s)  ((struct _string_*)((unsigned long)(s))-sizeof(struct _string_))
-#define ALLOC_DS(cap)   (struct _string_*)_alloc_mem(sizeof(struct _string_)+cap+1)
-#define REALLOC_DS(p)   (struct _string_*)_alloc_mem((p), sizeof(struct _string_)+(p)->cap+1)
+#define NOT_NULL(p) assert((p) != NULL)
+#define LOCAL(n, p) \
+    NOT_NULL(p);    \
+    struct _string_* n = (struct _string_*)(p)
 
 static void cat_string(struct _string_* ptr, const char* str) {
 
     size_t len = strlen(str);
-    if(ptr->len+len+1 > ptr->cap) {
-        while(ptr->len+len+1 > ptr->cap)
+    if(ptr->len + len + 1 > ptr->cap) {
+        while(ptr->len + len + 1 > ptr->cap)
             ptr->cap <<= 1;
-        //ptr = _realloc_mem(ptr, sizeof(struct _string_)+ptr->cap);
-        ptr = REALLOC_DS(ptr);
+        ptr->buffer = _realloc_mem(ptr->buffer, ptr->cap);
     }
 
-    memcpy(&DS_TO_STR(ptr)[ptr->len], str, len+1);
+    memcpy(&ptr->buffer[ptr->len], str, len + 1);
     ptr->len += len;
-    DS_TO_STR(ptr)[ptr->len] = '\0';
+    ptr->buffer[ptr->len] = '\0';
 }
 
 /**
@@ -54,15 +54,15 @@ static void cat_string(struct _string_* ptr, const char* str) {
  */
 STR create_str(const char* str) {
 
-    unsigned cap = 0x01 << 3;
-    struct _string_* ptr    = ALLOC_DS(cap);
-    ptr->cap    = cap;
-    ptr->len    = 0;
+    struct _string_* ptr = _alloc_obj(struct _string_);
+    ptr->cap             = 0x01 << 3;
+    ptr->len             = 0;
+    ptr->buffer          = _alloc_array(char, ptr->cap);
 
     if(str != NULL && strlen(str) > 0)
         cat_string(ptr, str);
 
-    return DS_TO_STR(ptr);
+    return (STR)ptr;
 }
 
 /**
@@ -80,13 +80,28 @@ STR create_str_fmt(const char* fmt, ...) {
     size_t len = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
-    char* str = _alloc(len+2);
+    char* str = _alloc(len + 2);
 
     va_start(args, fmt);
-    vsnprintf(str, len+2, fmt, args);
+    vsnprintf(str, len + 2, fmt, args);
     va_end(args);
 
-    return DS_TO_STR(create_str(str));
+    STR ptr = create_str(str);
+    _free(str);
+
+    return ptr;
+}
+
+/**
+ * @brief Destroy a string. This is a no-op if GC is active.
+ *
+ * @param h
+ */
+void destroy_str(STR h) {
+
+    LOCAL(p, h);
+    _free(p->buffer);
+    _free(p);
 }
 
 /**
@@ -101,12 +116,12 @@ int cat_str_char(STR ptr, int ch) {
     LOCAL(str, ptr);
     if(str->len + 1 >= str->cap) {
         str->cap <<= 1;
-        str = REALLOC_DS(str);
+        str->buffer = _realloc_array(str->buffer, char, str->cap);
     }
 
-    DS_TO_STR(str)[str->len] = ch;
+    str->buffer[str->len] = ch;
     str->len++;
-    DS_TO_STR(str)[str->len] = '\0';
+    str->buffer[str->len] = '\0';
 
     return str->len;
 }
@@ -118,7 +133,7 @@ int cat_str_char(STR ptr, int ch) {
  * @param str
  * @return int
  */
-int cat_str_str(char* ptr, const char* str) {
+int cat_str_str(STR ptr, const char* str) {
 
     LOCAL(p, ptr);
     size_t len = strlen(str);
@@ -126,12 +141,12 @@ int cat_str_str(char* ptr, const char* str) {
     if(p->len + len + 1 >= p->cap) {
         while(p->len + len + 1 >= p->cap)
             p->cap <<= 1;
-        p = REALLOC_DS(p);
+        p->buffer = _realloc_array(p->buffer, char, p->cap);
     }
 
-    memcpy(&DS_TO_STR(p)[p->len], str, len + 1);
+    memcpy(&p->buffer[p->len], str, len + 1);
     p->len += len;
-    DS_TO_STR(p)[p->len] = '\x0';
+    p->buffer[p->len] = '\x0';
 
     return p->len;
 }
@@ -152,14 +167,16 @@ int cat_str_fmt(STR ptr, const char* fmt, ...) {
     size_t len = vsnprintf(NULL, 0, fmt, args);
     va_end(args);
 
-    char* str = _alloc(len+2);
+    char* str = _alloc(len + 2);
 
     va_start(args, fmt);
-    vsnprintf(str, len+2, fmt, args);
+    vsnprintf(str, len + 2, fmt, args);
     va_end(args);
 
-    // assumes garbage collection
-    return cat_str_str(ptr, str);
+    cat_str_str(ptr, str);
+    _free(str);
+
+    return ((struct _string_*)ptr)->len;
 }
 
 /**
@@ -168,59 +185,22 @@ int cat_str_fmt(STR ptr, const char* fmt, ...) {
  * @param ptr
  * @return Str*
  */
-STR strip_str(STR ptr) {
+int strip_str(STR ptr) {
 
+    LOCAL(p, ptr);
     int idx;
 
-    for(idx = 0; isspace(ptr[idx]) && ptr[idx] != '\x0'; idx++) {
+    for(idx = 0; isspace(p->buffer[idx]) && p->buffer[idx] != '\x0'; idx++) {
     }
 
     if(idx > 0)
-        memmove(ptr, &ptr[idx], strlen(&ptr[idx]) + 1);
+        memmove(p->buffer, &p->buffer[idx], strlen(&p->buffer[idx]) + 1);
 
-    for(idx = strlen(ptr) - 1; isspace(ptr[idx]) && idx > 0; idx--)
-        ptr[idx] = 0;
+    for(idx = strlen(p->buffer) - 1; isspace(p->buffer[idx]) && idx > 0; idx--)
+        p->buffer[idx] = 0;
 
-    STR_TO_DS(ptr)->len = strlen(ptr);
-    return ptr;
-}
-
-/**
- * @brief Shorten the string to the specified index where the character at
- * the index is the terminating zero of the string.
- *
- * @param str
- * @param idx
- * @return int
- */
-int truncate_str(STR str, int idx) {
-
-    LOCAL(ptr, str);
-    if((size_t)idx < ptr->len) {
-        ptr->len = idx;
-        ptr->buffer[ptr->len] = '\0';
-    }
-
-    return ptr->len;
-}
-
-/**
- * @brief Return the index of the first instance of the substring. If the
- * substring is not found then return a negative value.
- *
- * @param str
- * @param s
- * @return int
- */
-int find_str(STR str, const char* s) {
-
-    LOCAL(ptr, str);
-    char* tmp = strstr(ptr->buffer, s);
-
-    if(tmp != NULL)
-        return (size_t)tmp - (size_t)ptr->buffer;
-    else
-        return -1;
+    p->len = strlen(ptr);
+    return p->len;
 }
 
 /**
@@ -232,7 +212,7 @@ int find_str(STR str, const char* s) {
 void clear_str(STR str) {
 
     LOCAL(ptr, str);
-    ptr->len = 0;
+    ptr->len       = 0;
     ptr->buffer[0] = 0;
 }
 
@@ -250,6 +230,138 @@ int comp_str(STR base, const char* str) {
 
     LOCAL(ptr, base);
     return strncmp(ptr->buffer, str, strlen(str));
+}
+
+/**
+ * @brief Make string uppercase
+ *
+ * @param str
+ */
+void upcase_str(STR str) {
+
+    for(char* ptr = ((struct _string_*)str)->buffer; *ptr != '\0'; ptr++)
+        *ptr = toupper(*ptr);
+}
+
+/**
+ * @brief Make string lower case.
+ *
+ * @param str
+ */
+void downcase_str(STR str) {
+
+    for(char* ptr = ((struct _string_*)str)->buffer; *ptr != '\0'; ptr++)
+        *ptr = tolower(*ptr);
+}
+
+/**
+ * @brief Make a copy of the string.
+ *
+ * @param str
+ * @return Str*
+ */
+STR copy_str(STR str) {
+
+    return create_str(((struct _string_*)str)->buffer);
+}
+
+/**
+ * @brief Return the number of characters in the string, excluding the
+ * ending terminating null.
+ *
+ * @param ptr
+ * @return size_t
+ */
+size_t len_str(STR ptr) {
+
+    return ((struct _string_*)ptr)->len;
+}
+
+/**
+ * @brief Return a pointer to the raw C string as a const char*.
+ *
+ * @param ptr
+ * @return const char*
+ */
+const char* raw_str(STR ptr) {
+
+    return ((struct _string_*)ptr)->buffer;
+}
+
+
+#ifdef TEST_STRINGS
+// build string:
+// gcc -Wall -Wextra -DTEST_STRINGS -g -o ts strs.c memory.c -lgc
+
+int main() {
+
+    STR s = create_str("create a string");
+    printf("str: %s\n", raw_str(s));
+
+    s = create_str_fmt("create a %s with %s", "string", "formatting");
+    printf("str: %s\n", raw_str(s));
+
+    cat_str_char(s, 'X');
+    printf("str: %s\n", raw_str(s));
+
+    cat_str_str(s, " <- an \"exx\"");
+    printf("str: %s\n", raw_str(s));
+
+    cat_str_fmt(s, " with %s with number: %d", "formatting", 1234);
+    printf("str: %s\n", raw_str(s));
+
+    s = create_str("  \t  this is before stripping    ");
+    printf("str: \"%s\"\n", raw_str(s));
+    strip_str(s);
+    printf("str: \"%s\"\n", raw_str(s));
+    clear_str(s);
+    printf("str: \"%s\"\n", raw_str(s));
+
+    cat_str_str(s, "this is a lower case string");
+    printf("str: \"%s\"\n", raw_str(s));
+    upcase_str(s);
+    printf("str: \"%s\"\n", raw_str(s));
+    downcase_str(s);
+    printf("str: \"%s\"\n", raw_str(s));
+
+    s = copy_str(s);
+    printf("str: \"%s\"\n", raw_str(s));
+
+    s = create_str("monkey patch the bacon");
+    printf("compare strings \"%s\" and \"%s\" is %s\n", raw_str(s), "monkey patch the bacon",
+           comp_str(s, "monkey patch the bacon") == 0 ? "true" : "false");
+
+    printf("compare strings \"%s\" and \"%s\" is %s\n", raw_str(s), "monkey patch", comp_str(s, "monkey patch") == 0 ? "true" : "false");
+
+    printf("compare strings \"%s\" and \"%s\" is %s\n", raw_str(s), "patch the bacon", comp_str(s, "patch the bacon") == 0 ? "true" : "false");
+
+    printf("compare strings \"%s\" and \"%s\" is %s\n", raw_str(s), "Monkey patch", comp_str(s, "Monkey patch") == 0 ? "true" : "false");
+
+    printf("string \"%s\" length is %lu\n", raw_str(s), len_str(s));
+
+    return 0;
+}
+
+#endif
+
+#if 0
+/**
+ * @brief Return the index of the first instance of the substring. If the
+ * substring is not found then return a negative value.
+ *
+ * @param str
+ * @param s
+ * @return int
+ */
+int find_str(STR str, const char* s) {
+
+    LOCAL(ptr, str);
+    char* tmp = strstr(ptr->buffer, s);
+
+    if(tmp != NULL)
+        return (size_t)tmp - (size_t)ptr->buffer;
+    else
+        return -1;
 }
 
 /**
@@ -277,57 +389,23 @@ STR clip_str(STR base, int start, int end) {
 }
 
 /**
- * @brief Make string uppercase
+ * @brief Shorten the string to the specified index where the character at
+ * the index is the terminating zero of the string.
  *
  * @param str
+ * @param idx
+ * @return int
  */
-void upcase_str(Str* str) {
+int truncate_str(STR str, int idx) {
 
-    for(char* ptr = str->buffer; *ptr != '\0'; ptr++)
-        *ptr = toupper(*ptr);
-}
-
-/**
- * @brief Make string lower case.
- *
- * @param str
- */
-void downcase_str(Str* str) {
-
-    for(char* ptr = str->buffer; *ptr != '\0'; ptr++)
-        *ptr = tolower(*ptr);
-}
-
-/**
- * @brief Make a copy of the string.
- *
- * @param str
- * @return Str*
- */
-Str* copy_str(Str* str) {
-
-    return create_str(str->buffer);
-}
-
-/**
- * @brief Return a pointer to the raw C string as a const char*.
- *
- * @param ptr
- * @return const char*
- */
-const char* raw_str(Str* ptr) {
-
-    return ptr->buffer;
-}
-
-/**
- * @brief Return the number of characters in the string, excluding the
- * ending terminating null.
- *
- * @param ptr
- * @return size_t
- */
-size_t len_str(Str* ptr) {
+    LOCAL(ptr, str);
+    if((size_t)idx < ptr->len) {
+        ptr->len = idx;
+        ptr->buffer[ptr->len] = '\0';
+    }
 
     return ptr->len;
 }
+
+
+#endif

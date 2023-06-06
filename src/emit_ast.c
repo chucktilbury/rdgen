@@ -1,6 +1,6 @@
 
-#include "emit.h"
 #include "emit_ast.h"
+#include "emit.h"
 #include "utils.h"
 
 static Pstate* state = NULL;
@@ -21,7 +21,7 @@ static void emit_typedefs(str_lst_t* lst) {
     EMIT("typedef struct {\n  AstType type;\n} Ast;\n\n");
 
     FOR_LST(Str, s, str_lst, lst)
-        EMIT("typedef struct _%s_ %s_t;\n", s->buffer, s->buffer);
+    EMIT("typedef struct _%s_ %s_t;\n", s->buffer, s->buffer);
 
     EMIT("\n");
 }
@@ -34,8 +34,7 @@ static void emit_data(Rule* rule) {
     FOR_LST(Pattern, p, pattern_lst, rule->patterns) {
         // make a list of unique strings
         FOR_LST(PatElem, pe, pat_elem_lst, p->elems) {
-            if(str_in_lst(state->non_terminals, pe->str->buffer) &&
-                        !str_in_lst(tmp, pe->str->buffer)) {
+            if(str_in_lst(state->non_terminals, pe->str->buffer) && !str_in_lst(tmp, pe->str->buffer)) {
                 str_lst_add(tmp, pe->str);
             }
         }
@@ -55,7 +54,7 @@ static void emit_data(Rule* rule) {
 static void emit_data_structures() {
 
     FOR_LST(Rule, r, rule_lst, state->rules)
-        emit_data(r);
+    emit_data(r);
 }
 
 static void ast_header() {
@@ -87,4 +86,3 @@ void emit_ast(Pstate* s) {
 
     ast_header();
 }
-

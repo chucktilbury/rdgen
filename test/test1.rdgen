@@ -1,13 +1,14 @@
 # asd
 # asas.
 #
+%verbosity 6
 
 # if % is in the first column, then it's a directive
-%parser_code {
+%code {
     // parser source code
 }
 
-%ast_code # another comment
+%code # another comment
 {
     // ast source code
     asd {
@@ -15,16 +16,8 @@
         };
 }
 
-%parser_header {
-    // parser header code
-}
-
-%ast_header {
-    // ast header code
-}
-
-%parser_name "simple_parser"
-%ast_name "simple_ast"
+%name "simple"
+%prefix "simple_"
 
 module: module_item_list {}
 
@@ -38,9 +31,13 @@ module_item
     : NUMBER {}
     : QWERTS {}
 
-%ast_header
+%code
 {
-    #include <something.h>
+
+#include <something.h>
+void afunc() {
     pooker = 123;
     printf("bacon and eggs");
+}
+
 }

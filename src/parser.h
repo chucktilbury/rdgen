@@ -33,15 +33,12 @@ typedef struct {
     int verbo;
 
     // raw names of output files as given by directives
-    STR ast_name;
-    STR parser_name;
+    STR name;
+    STR prefix;
 
     // string lists that will be copied as source code to the output,
     // as given by directives
-    str_lst_t* ast_source;
-    str_lst_t* ast_header;
-    str_lst_t* parser_source;
-    str_lst_t* parser_header;
+    str_lst_t* code;
 
     // the raw rules as presented in the grammar
     rule_lst_t* rules;

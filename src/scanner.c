@@ -65,18 +65,12 @@ static void get_directive() {
 
     if(!strcmp(raw_str(_tok.str), "%verbosity"))
         _tok.type = VERBOSITY;
-    else if(!strcmp(raw_str(_tok.str), "%ast_name"))
-        _tok.type = AST_NAME;
-    else if(!strcmp(raw_str(_tok.str), "%parser_name"))
-        _tok.type = PARSER_NAME;
-    else if(!strcmp(raw_str(_tok.str), "%ast_code"))
-        _tok.type = AST_CODE;
-    else if(!strcmp(raw_str(_tok.str), "%parser_code"))
-        _tok.type = PARSER_CODE;
-    else if(!strcmp(raw_str(_tok.str), "%ast_header"))
-        _tok.type = AST_HEADER;
-    else if(!strcmp(raw_str(_tok.str), "%parser_header"))
-        _tok.type = PARSER_HEADER;
+    else if(!strcmp(raw_str(_tok.str), "%name"))
+        _tok.type = NAME;
+    else if(!strcmp(raw_str(_tok.str), "%prefix"))
+        _tok.type = PREFIX;
+    else if(!strcmp(raw_str(_tok.str), "%code"))
+        _tok.type = CODE;
     else {
         _tok.type = ERROR;
         syntax("unknown directive: %s", raw_str(_tok.str));
@@ -224,18 +218,15 @@ TokenType consume_token(Token* tok) {
 
 const char* tok_to_str(TokenType type) {
 
-    return (type == ERROR)  ? "error token" :
-    (type == BLOCK)         ? "block definition" :
-    (type == COLON)         ? ":" :
-    (type == SYMBOL)        ? "symbol definition" :
-    (type == STRG)          ? "quoted string" :
-    (type == NUMBER)        ? "number" :
-    (type == VERBOSITY)     ? "verbosity directive" :
-    (type == AST_NAME)      ? "ast_name directive" :
-    (type == PARSER_NAME)   ? "parser_name directive" :
-    (type == AST_CODE)      ? "ast_code directive" :
-    (type == PARSER_CODE)   ? "parser_code directive" :
-    (type == AST_HEADER)    ? "ast_header directive" :
-    (type == PARSER_HEADER) ? "parser_header directive" :
-                              "UNKNOWN";
+    return (type == ERROR) ? "error token" :
+    (type == BLOCK)        ? "block definition" :
+    (type == COLON)        ? ":" :
+    (type == SYMBOL)       ? "symbol definition" :
+    (type == STRG)         ? "quoted string" :
+    (type == NUMBER)       ? "number" :
+    (type == VERBOSITY)    ? "verbosity directive" :
+    (type == NAME)         ? "file name directive" :
+    (type == PREFIX)       ? "data structure prefix directive" :
+    (type == CODE)         ? "code directive" :
+                             "UNKNOWN";
 }

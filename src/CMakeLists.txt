@@ -17,6 +17,7 @@ add_executable(${PROJECT_NAME}
     emit.c
     #emit_ast.c
     #emit_parser.c
+    list.c
     utils.c
 )
 

@@ -35,6 +35,7 @@ struct _list_ {
     LST_ELEM* first;
     LST_ELEM* last;
     LST_ELEM* crnt;
+    size_t len;
 };
 
 #define CAST_LST(p) ((struct _list_*)(p))
@@ -126,6 +127,7 @@ void append_lst(LST lst, void* data, size_t size, int type) {
     }
 
     l->last = elem;
+    l->len++;
 }
 
 /**
@@ -152,6 +154,7 @@ void prepend_lst(LST lst, void* data, size_t size, int type) {
     }
 
     l->first = elem;
+    l->len++;
 }
 
 // if flag is true the insert after, else insert before
@@ -199,6 +202,7 @@ void insert_lst(LST lst, void* elem, void* ptr, size_t size, int type, bool flag
         }
     }
 
+    ((struct _list_*)lst)->len++;
     LST_ELEM* nele = create_elem(ptr, size, type);
     nele->next     = next;
     nele->prev     = prev;
@@ -284,6 +288,17 @@ int get_elem_type(void* elem) {
 }
 
 /**
+ * @brief Get the list length.
+ *
+ * @param lst
+ * @return size_t
+ */
+size_t get_lst_len(LST lst) {
+
+    return ((struct _list_*)lst)->len;
+}
+
+/**
  * @brief Delete the specified item from the list, as specified using an
  * index. Does not account for crnt item, so items cannot be deleted while
  * iterating the list.
@@ -333,6 +348,7 @@ void remove_lst(LST lst, void* elem) {
         prev->next     = next;
     }
     free_elem(e);
+    l->len--;
 }
 
 /**

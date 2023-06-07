@@ -1,64 +1,45 @@
 #ifndef _PTRLST_H
 #define _PTRLST_H
 
-#define PTRLST_HEADER(N, T)          \
-    typedef struct {                 \
-        T* list;                     \
-        unsigned int len;            \
-        unsigned int cap;            \
-        unsigned int idx;            \
-    } N##_t;                         \
-                                     \
-    N##_t* N##_create();             \
-    void N##_add(N##_t* lst, T ptr); \
-    T N##_reset(N##_t* lst);         \
-    T N##_iterate(N##_t* lst);       \
-    T N##_get(N##_t* lst, unsigned int idx);
+#include "list.h"
+/*
+ * Never instantiate this.
+ */
+#define TDEF(N) typedef LST N##_t;
 
-#define PTRLST_IMPL(N, T)                                       \
-                                                                \
-    N##_t* N##_create() {                                       \
-                                                                \
-        N##_t* lst = _alloc_obj(N##_t);                         \
-        lst->cap   = 0x01 << 3;                                 \
-        lst->list  = _alloc_array(T, lst->cap);                 \
-                                                                \
-        return lst;                                             \
-    }                                                           \
-                                                                \
-    void N##_add(N##_t* lst, T ptr) {                           \
-                                                                \
-        if(lst->len + 1 >= lst->cap) {                          \
-            lst->cap <<= 1;                                     \
-            lst->list = _realloc_array(lst->list, T, lst->cap); \
-        }                                                       \
-                                                                \
-        lst->list[lst->len] = ptr;                              \
-        lst->len++;                                             \
-    }                                                           \
-                                                                \
-    T N##_reset(N##_t* lst) {                                   \
-                                                                \
-        lst->idx = 0;                                           \
-        return lst->list[0];                                    \
-    }                                                           \
-                                                                \
-    T N##_iterate(N##_t* lst) {                                 \
-                                                                \
-        if(lst->idx >= lst->len)                                \
-            return NULL;                                        \
-        else {                                                  \
-            lst->idx++;                                         \
-            return lst->list[lst->idx];                         \
-        }                                                       \
-    }                                                           \
-                                                                \
-    T N##_get(N##_t* lst, unsigned int idx) {                   \
-                                                                \
-        if(idx < lst->len)                                      \
-            return lst->list[idx];                              \
-        else                                                    \
-            return NULL;                                        \
+/*
+ * Define this macro in the header file.
+ */
+#define PTRLST_HEADER(N, T)                  \
+    TDEF(N)                                  \
+    N##_t N##_create();                      \
+    void N##_add(N##_t lst, T* ptr);         \
+    T* N##_reset(N##_t lst);                 \
+    T* N##_iterate(N##_t lst);               \
+    T* N##_get(N##_t lst, unsigned int idx); \
+    size_t N##_len(N##_t lst);
+
+/*
+ * Instantiate this macro in the source code module.
+ */
+#define PTRLST_IMPL(N, T)                               \
+    N##_t N##_create() {                                \
+        return (N##_t)create_lst();                     \
+    }                                                   \
+    void N##_add(N##_t lst, T* ptr) {                   \
+        append_lst((LST)lst, (void*)ptr, sizeof(T), 0); \
+    }                                                   \
+    T* N##_reset(N##_t lst) {                           \
+        return (T*)reset_lst((LST)lst);                 \
+    }                                                   \
+    T* N##_iterate(N##_t lst) {                         \
+        return (T*)iterate_lst((LST)lst);               \
+    }                                                   \
+    T* N##_get(N##_t lst, unsigned int idx) {           \
+        return (T*)get_elem((LST)lst, idx);             \
+    }                                                   \
+    size_t N##_len(N##_t lst) {                         \
+        return get_lst_len((LST)lst);                   \
     }
 
 /*
